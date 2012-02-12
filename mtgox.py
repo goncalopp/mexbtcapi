@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 # mtgox/mtgox.py
 
@@ -34,6 +35,7 @@ import urllib2
 import simplejson
 
 _URL = "https://mtgox.com/api/1/"
+CURRENCY = "USD"
 
 class MtGoxError(Exception):
     def __init__(self, value):
@@ -80,22 +82,22 @@ def currency(currency):
     data = {'currency' : currency}
     return _generic('currency', data=data)
 
-def depth(currency):
+def depth(currency=CURRENCY):
     """Return depth for a given currency."""
     return _specific('depth', currency)
 
-def full_depth(currency):
+def full_depth(currency=CURRENCY):
     return _specific('fulldepth', currency)
 
-def ticker(currency):
+def ticker(currency=CURRENCY):
     """Return ticker for a given currency."""
     return _specific('ticker', currency)
 
-def trades(currency):
+def trades(currency=CURRENCY):
     """Return trades for a given currency."""
     return _specific('trades', currency)
 
-def cancelled_trades(self, currency):
+def cancelled_trades(currency=CURRENCY):
     """Return a list of all the cancelled trade ids this last month."""
     return _specific('cancelledtrades', currency)
 
@@ -106,7 +108,6 @@ class Private:
     def __init__(self, key, secret):
         self._key = key
         self._secret = base64.b64decode(secret)
-        self.currency = "USD"
 
     def _generic(self, name, data=None):
         url = _URL + 'generic/private/' + name
@@ -148,9 +149,25 @@ class Private:
         
     def orders(self):
         """Return standing orders"""
-        return _generic('orders')
+        return self._generic('orders')
 
-    def ask(self, amount, price, currency=None):
+    def cancel_ask(self, oid):
+        return self._cancel(oid, 1)
+    def cancel_bid(self, oid):
+        return self._cancel(oid, 2)
+
+    def _cancel(self, oid, type):
+        # MtGox doesn't have a method to cancel orders for API 1.
+        # type: 1 for sell order or 2 for buy order
+        url = "https://mtgox.com/api/0/cancelOrder.php"
+        data = {'oid' : oid,
+                'type' : type}
+        req = self._request(url, data)
+        f = urllib2.urlopen(req)
+        data = simplejson.load(f)
+        return data
+
+    def ask(self, amount, price, currency=CURRENCY):
         """Sell bitcoins
 
         If price is an int, it is assumed that it is in
@@ -159,7 +176,7 @@ class Private:
         """
         self._order_add('ask', amount, price, currency)
         
-    def bid(self, amount, price, currency=None):
+    def bid(self, amount, price, currency=CURRENCY):
         """Buy bitcoins
         
         If price is an int, it is assumed that it is in
@@ -178,6 +195,4 @@ class Private:
         data = {'type' : order_type,
                 'amount_int' : amount,
                 'price_int' : price}
-        if currency is None:
-            currency = self.currency
         return self._specific('order/add', currency, data)

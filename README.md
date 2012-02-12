@@ -1,20 +1,22 @@
+Python-MtGox
+============
+
 This is an interface to MtGox's API version 1
 
 Depends on simplejson :
   http://undefined.org/python/#simplejson http://pypi.python.org/pypi/simplejson
 
 
-To install:
+## INSTALL
 
 $ python setup.py install
 
 
-Usage:
+## EXAMPLE
 
 import mtgox
+
 mtgox.ticker("USD")
+
 account = mtgox.Private(key, secret)
 account.info()
-
-
-If a method isn't documented by MtGox, it's probably not here.
