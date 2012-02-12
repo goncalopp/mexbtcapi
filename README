@@ -1,0 +1,16 @@
+This is an interface to MtGox's API version 1
+
+To install:
+
+$ python setup.py install
+
+
+Usage:
+
+import mtgox
+mtgox.ticker("USD")
+account = mtgox.Private(key, secret)
+account.info()
+
+
+If a method isn't documented by MtGox, it's probably not here.
