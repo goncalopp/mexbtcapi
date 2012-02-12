@@ -16,7 +16,9 @@ $ python setup.py install
 
 import mtgox
 
+
 mtgox.ticker("USD")
 
 account = mtgox.Private(key, secret)
+
 account.info()
