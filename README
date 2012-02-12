@@ -1,5 +1,9 @@
 This is an interface to MtGox's API version 1
 
+Depends on simplejson :
+  http://undefined.org/python/#simplejson http://pypi.python.org/pypi/simplejson
+
+
 To install:
 
 $ python setup.py install
