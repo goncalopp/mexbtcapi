@@ -32,10 +32,13 @@ import hmac
 import time
 import urllib
 import urllib2
-import simplejson
+import json
+
+from decimal import Decimal
 
 _URL = "https://mtgox.com/api/1/"
 CURRENCY = "USD"
+RETURN_TYPE = int
 
 class MtGoxError(Exception):
     def __init__(self, value):
@@ -56,6 +59,41 @@ class _Multiplier(dict):
         
 multiplier = _Multiplier()
 
+def _pairs_hook(pairs):
+    d = dict()
+    ideal = None
+    keep = None
+    drop = None
+    if RETURN_TYPE in (Decimal, float):
+        value = 'value'
+        keep = ('amount', 'price', 'value')
+        drop = ('currency', 'display', 'item', 'price_currency',
+                'amount_int', 'price_int', 'value_int')
+    if RETURN_TYPE is int:
+        value = 'value_int'
+        keep = ('amount_int', 'price_int', 'value_int')
+        drop = ('currency', 'display', 'item', 'price_currency',
+                    'amount', 'price', 'value')
+    if RETURN_TYPE is str:
+        value = 'display'
+        keep = ()
+        drop = ('currency',
+                'amount', 'price', 'value', 'item', 'price_currency',
+                'amount_int', 'price_int', 'value_int')
+    for k, v in pairs:
+        if k in drop:
+            continue
+        elif k in keep:
+            d[k] = RETURN_TYPE(v)
+        elif k in ('stamp', 'tid'):
+            d[k] = int(v)
+        else:
+            d[k] = v
+    if len(d) is 1:
+        return d.values()[0]
+    else:
+        return d
+            
 def _generic(name, data=None):
     url = _URL + 'generic/public/' + name
     return _json_request(url, data)
@@ -71,11 +109,12 @@ def _json_request(url, data=None):
     else:
         req = urllib2.Request(url)
     f = urllib2.urlopen(req)
-    data = simplejson.load(f)
-    if data['result'] == 'success':
-        return data['return']
+    jdata = json.load(f, object_pairs_hook=_pairs_hook)
+
+    if jdata['result'] == 'success':
+        return jdata['return']
     else:
-        raise MtGoxError(data['error'])
+        raise MtGoxError(jdata['error'])
 
 def currency(currency):
     """Return info for a given currency symbol (BTC, USD, EUR)."""
@@ -84,9 +123,12 @@ def currency(currency):
 
 def depth(currency=CURRENCY):
     """Return depth for a given currency."""
-    return _specific('depth', currency)
+    if RETURN_TYPE is str:
+        pass
+    else:
+        return _specific('depth', currency)
 
-def full_depth(currency=CURRENCY):
+def depth_full(currency=CURRENCY):
     return _specific('fulldepth', currency)
 
 def ticker(currency=CURRENCY):
@@ -137,11 +179,11 @@ class Private:
     def _json_request(self, url, data=None):
         req = self._request(url, data)
         f = urllib2.urlopen(req)
-        data = simplejson.load(f)
-        if data['result'] == 'success':
-            return data['return']
+        jdata = json.load(f, object_pairs_hook=_pairs_hook)
+        if jdata['result'] == 'success':
+            return jdata['return']
         else:
-            raise MtGoxError(data['error'])   
+            raise MtGoxError(jdata['error'])
 
     def info(self):
         """Return account info"""
@@ -186,9 +228,9 @@ class Private:
         self._order_add('bid', amount, price, currency)
 
     def _order_add(self, order_type, amount, price, currency):
-        if type(amount) == float:
+        if type(amount) in (Decimal, float):
             amount = int(amount * multiplier['BTC'])
-        if type(price) == float:
+        if type(price) is (Decimal, float):
             price = int(price * multiplier[currency])
         assert type(amount) == int
         assert type(price) == int
