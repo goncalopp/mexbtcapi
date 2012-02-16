@@ -73,7 +73,7 @@ def _pairs_hook(pairs):
         value = 'value_int'
         keep = ('amount_int', 'price_int', 'value_int')
         drop = ('currency', 'display', 'item', 'price_currency',
-                    'amount', 'price', 'value')
+                'amount', 'price', 'value')
     if RETURN_TYPE is str:
         value = 'display'
         keep = ()
@@ -179,7 +179,7 @@ class Private:
     def _json_request(self, url, data=None):
         req = self._request(url, data)
         f = urllib2.urlopen(req)
-        jdata = json.load(f, object_pairs_hook=_pairs_hook)
+        jdata = json.load(f)#, object_pairs_hook=_pairs_hook)
         if jdata['result'] == 'success':
             return jdata['return']
         else:
