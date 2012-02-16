@@ -230,7 +230,7 @@ class Private:
     def _order_add(self, order_type, amount, price, currency):
         if type(amount) in (Decimal, float):
             amount = int(amount * multiplier['BTC'])
-        if type(price) is (Decimal, float):
+        if type(price) in (Decimal, float):
             price = int(price * multiplier[currency])
         assert type(amount) == int
         assert type(price) == int
