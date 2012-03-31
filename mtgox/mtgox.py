@@ -206,7 +206,7 @@ class Private:
                 'type' : type}
         req = self._request(url, data)
         f = urllib2.urlopen(req)
-        data = simplejson.load(f)
+        data = json.load(f)
         return data
 
     def ask(self, amount, price, currency=CURRENCY):
@@ -238,3 +238,17 @@ class Private:
                 'amount_int' : amount,
                 'price_int' : price}
         return self._specific('order/add', currency, data)
+
+    def withdrawl_btc(self, address, amount):
+        url = "https://mtgox.com/api/0/withdraw.php"
+        if type(amount) in (Decimal, float):
+            amount = int(amount * multiplier['BTC'])
+        assert type(amount) == int
+        data = {'group1' : "BTC",
+                'btca' : address,
+                'amount' : amount}
+        req = self._request(url, data)
+        f = urllib2.urlopen(req)
+        data = json.load(f)
+        return data
+
