@@ -64,7 +64,10 @@ class Cache:
         else:
             result= value
         return result
-        
+
+def create_cache(timeout= 1000):
+    '''creates a cache with a DictionaryCacheBackend'''
+    return Cache(DictinaryCacheBackend(), timeout= timeout)
 
 
 #demonstration
