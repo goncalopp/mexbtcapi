@@ -41,7 +41,7 @@ class ExchangeRate(object):
         return cmp(self.exchange_rate,other.exchange_rate)
 
     def __repr__(self):
-        return "%.3f %s/%s" % (self.exchange_rate, self.c2.name, self.c1.name)
+        return "%.2f %s/%s" % (self.exchange_rate, self.c2.name, self.c1.name)
 
 class Amount(object):
     def __init__(self, value, currency):
@@ -57,7 +57,7 @@ class Amount(object):
         return Amount( self.value, self.currency)
         
     def __repr__(self):
-        return str(self.value)+" "+str(self.currency)
+        return "%.2f %s" % (self.value, self.currency)
 
     def __iadd__(self, other):
         if type(other) in (int, float):
