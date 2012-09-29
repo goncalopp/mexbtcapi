@@ -1,4 +1,5 @@
 from distutils.core import setup
+import setuptools
 setup(name='mtgox',
       version='1.0.2',
       description="Interface to the MtGox Bitcoin trading platform",
