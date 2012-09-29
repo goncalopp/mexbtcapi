@@ -12,9 +12,10 @@ class Trade(object):
 
 class Market(object):
     '''Represents a market - where Trade's are made'''
-    def __init__(self, market_name, currency1, currency2):
+    def __init__(self, market_name, c1, c2):
+        '''c1 is the "buy" currency'''
         self.name= market_name
-        self.currency1, self.currency2= currency1, currency2
+        self.c1, self.c2= c1, c2
     
     def getOpenTrades(self):
         '''returns a list with all the open Trade's in the market'''

@@ -18,7 +18,9 @@ class Currency( object ):
 
 class ExchangeRate(object):
     def __init__(self, c1, c2, exchange_rate):
-        '''c2 = exchange_rate * c1'''
+        assert all([isinstance(x, Currency) for x in (c1,c2)])
+        '''c2 = exchange_rate * c1. If associated with a market, c2 is 
+        the "buy" currency'''
         assert c1!=c2
         check_number_for_decimal_conversion( exchange_rate )
         self.c1, self.c2= c1, c2
@@ -29,9 +31,15 @@ class ExchangeRate(object):
         if self.c1==amount.currency:
             return Amount(amount.value*self.exchange_rate, self.c2)
         elif self.c2==amount.currency:
-            return Amount(amount.value/self.exchange_rate, self.c2)
+            return Amount((1/amount.value)*self.exchange_rate, self.c1)
         else:
             raise Exception("Can't exchange currencies with this ExchangeRate")
+
+    def __cmp__(self, other):
+        if not isinstance(other, ExchangeRate) or other.c1!=self.c1 or other.c2!=self.c2:
+            raise ValueError("can't compare the two amounts", str(self), str(other))
+        return cmp(self.exchange_rate,other.exchange_rate)
+
     def __repr__(self):
         return "%.3f %s/%s" % (self.exchange_rate, currency_dict[self.c1], currency_dict[self.c2])
 
