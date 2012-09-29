@@ -1,5 +1,10 @@
 from decimal import Decimal
-import currency_constants as currencies
+
+class Currency( object ):
+    def __init__(self, name):
+        self.name= name
+    def __repr__(self):
+        return self.name
 
 class ExchangeRate(object):
     def __init__(self, c1, c2, exchange_rate):
@@ -34,7 +39,7 @@ class Amount(object):
         return Amount( self.value, self.currency)
         
     def __repr__(self):
-        return str(self.value)+" "+currencies.list[self.currency]
+        return str(self.value)+" "+str(self.currency)
 
     def __iadd__(self, other):
         if type(other) in (int, float):
