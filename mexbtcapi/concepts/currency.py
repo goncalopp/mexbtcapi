@@ -1,4 +1,14 @@
 from decimal import Decimal
+from mexbtcapi import log
+
+
+
+def check_number_for_decimal_conversion(number):
+    a= type(number) in (int, long)
+    b= isinstance(number, (str, Decimal))
+    if not (a or b):
+        log.warning("You are using a number ("+str(number)+") that is not suitable to convert to Decimal!")
+
 
 class Currency( object ):
     def __init__(self, name):
@@ -8,19 +18,18 @@ class Currency( object ):
 
 class ExchangeRate(object):
     def __init__(self, c1, c2, exchange_rate):
-        '''c1 = exchange_rate * c2'''
+        '''c2 = exchange_rate * c1'''
         assert c1!=c2
+        check_number_for_decimal_conversion( exchange_rate )
         self.c1, self.c2= c1, c2
         self.exchange_rate= Decimal( exchange_rate )
 
     def convert(self, amount):
         assert isinstance(amount, Amount)
         if self.c1==amount.currency:
-            amount.value*= self.exchange_rate
-            amount.currency= self.c2
+            return Amount(amount.value*self.exchange_rate, self.c2)
         elif self.c2==amount.currency:
-            amount.value/= self.exchange_rate
-            amount.currency= self.c1
+            return Amount(amount.value/self.exchange_rate, self.c2)
         else:
             raise Exception("Can't exchange currencies with this ExchangeRate")
     def __repr__(self):
@@ -28,6 +37,7 @@ class ExchangeRate(object):
 
 class Amount(object):
     def __init__(self, value, currency):
+        check_number_for_decimal_conversion( value )
         self.value, self.currency= Decimal(value), currency
 
     def convert(self, currencyequivalence, to_currency):
