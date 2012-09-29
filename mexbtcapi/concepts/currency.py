@@ -41,7 +41,7 @@ class ExchangeRate(object):
         return cmp(self.exchange_rate,other.exchange_rate)
 
     def __repr__(self):
-        return "%.3f %s/%s" % (self.exchange_rate, currency_dict[self.c1], currency_dict[self.c2])
+        return "%.3f %s/%s" % (self.exchange_rate, self.c2.name, self.c1.name)
 
 class Amount(object):
     def __init__(self, value, currency):
