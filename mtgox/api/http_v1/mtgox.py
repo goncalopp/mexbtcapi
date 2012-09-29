@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# mtgox/mtgox.py
-
 # Copyright © 2012 EM3RY <emery@vfemail.net>
 #
 # Permission is hereby granted, free of charge, to any person
@@ -24,7 +22,6 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
-
 
 import base64
 import hashlib
