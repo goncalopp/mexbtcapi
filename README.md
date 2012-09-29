@@ -1,9 +1,15 @@
-Python-MtGox
+MExBtcAPI
 ============
 
-This project was originaly a python mtgox (httpv1) api developed by 
-[3M3RY](https://github.com/3M3RY) and is now being integrated into 
-[mexbtcapi](https://github.com/goncalopp/mexbtcapi).
+Welcome to the Multi-Exchange Bitcoin API!
 
-For old code and README, checkout the following commit:  
-58f7da25df162555439f57e00402105c3b6a60be (2012-03-31)
+This project aims to:  
+
+* provide a set of well developed interfaces useful in representing useful concepts like  
+    * currency
+    * money
+    * exchange rate
+    * currency market
+    * currency exchange
+* promote their use
+* provide API implementations of various bitcoin exchanges using them
