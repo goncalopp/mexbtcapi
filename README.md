@@ -1,31 +1,9 @@
 Python-MtGox
 ============
 
-This is an interface to MtGox's API version 1.
+This project was originaly a python mtgox (httpv1) api developed by 
+[3M3RY](https://github.com/3M3RY) and is now being integrated into 
+[mexbtcapi](https://github.com/goncalopp/mexbtcapi).
 
-All numbers are returned as integers by default, divide by 
-the currency's multiplier to get a human readable value. Just
-use the multiplier dict, mtgox.multiplier[three-letter-currency-symbol].
-
-## INSTALL
-
-$ python setup.py install
-
-
-## EXAMPLE
-```
-import mtgox
-
-mtgox.ticker("USD")
-mtgox.multiplier["EUR"]
-
-account = mtgox.Private(key, secret)
-account.info()
-
-
-import mtgox.arrays
-
-numpy_array_of_trades = mtgox.arrays.trades()
-```
-
-Donations: 174fzBxiW2Eiqmdd64CGTdJwLbjU2fxHEY
+For old code and README, checkout the following commit:  
+58f7da25df162555439f57e00402105c3b6a60be (2012-03-31)
