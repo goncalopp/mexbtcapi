@@ -4,7 +4,8 @@ import datetime
 
 import mexbtcapi
 from mexbtcapi import concepts
-BTC= concepts.currencies.BTC
+from mexbtcapi.concepts.currencies import BTC
+from mexbtcapi.concepts.market import Market as BaseMarket
 
 import mtgox as low_level
 
@@ -13,7 +14,7 @@ MARKET_NAME= "MtGox"
 class MtgoxTicker( concepts.market.Ticker):
     TIME_PERIOD= 24*60*60
 
-class Market( concepts.market.Market ):
+class Market(BaseMarket):
     def __init__( self, currency ):
         mexbtcapi.concepts.market.Market.__init__(self, MARKET_NAME, BTC, currency)
         self.multiplier= low_level.multiplier[ currency.name ] #to convert low level data
