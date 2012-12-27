@@ -30,4 +30,3 @@ At the moment, this code returns this output:
 
     At MtGox I can get 1.25 BTC for my 10.00 USD (that's 12.45 USD/BTC)
 
-Please note you need python 2.7 for the current mtgox library to work correctly

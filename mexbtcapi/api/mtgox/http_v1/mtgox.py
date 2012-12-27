@@ -56,7 +56,7 @@ class _Multiplier(dict):
         
 multiplier = _Multiplier()
 
-def _pairs_hook(pairs):
+def _value_hook(values):
     d = dict()
     ideal = None
     keep = None
@@ -77,7 +77,7 @@ def _pairs_hook(pairs):
         drop = ('currency',
                 'amount', 'price', 'value', 'item', 'price_currency',
                 'amount_int', 'price_int', 'value_int')
-    for k, v in pairs:
+    for k,v in values.iteritems():
         if k in drop:
             continue
         elif k in keep:
@@ -106,7 +106,7 @@ def _json_request(url, data=None):
     else:
         req = urllib2.Request(url)
     f = urllib2.urlopen(req)
-    jdata = json.load(f, object_pairs_hook=_pairs_hook)
+    jdata = json.load(f, object_hook=_value_hook)
 
     if jdata['result'] == 'success':
         return jdata['return']
