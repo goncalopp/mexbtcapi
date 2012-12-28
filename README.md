@@ -30,3 +30,8 @@ At the moment, this code returns this output:
 
     At MtGox I can get 1.25 BTC for my 10.00 USD (that's 12.45 USD/BTC)
 
+
+Obtaining the latest source
+============
+This project is currently developed at github:
+https://github.com/goncalopp/mexbtcapi
