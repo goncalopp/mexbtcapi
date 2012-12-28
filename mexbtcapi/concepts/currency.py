@@ -5,7 +5,7 @@ from mexbtcapi import log
 
 def check_number_for_decimal_conversion(number):
     a= type(number) in (int, long)
-    b= isinstance(number, (str, Decimal))
+    b= isinstance(number, (str, unicode, Decimal))
     if not (a or b):
         log.warning("You are using a number ("+str(number)+") that is not suitable to convert to Decimal!")
 
