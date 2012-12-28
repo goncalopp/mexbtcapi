@@ -1,5 +1,5 @@
 MExBtcAPI
-============
+=========
 
 Welcome to the Multi-Exchange Bitcoin API!
 
@@ -32,6 +32,11 @@ At the moment, this code returns this output:
 
 
 Obtaining the latest source
-============
+===========================
 This project is currently developed at github:
 https://github.com/goncalopp/mexbtcapi
+
+
+Adding suport for a new market
+===========================
+Please consult the add_market file
