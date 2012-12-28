@@ -30,7 +30,8 @@ import datetime
 import mexbtcapi
 from mexbtcapi import concepts
 from mexbtcapi.concepts.currencies import BTC, USD
-from mexbtcapi.concepts.market import Market as BaseMarket
+from mexbtcapi.concepts.currency import Amount
+from mexbtcapi.concepts.market import Market as BaseMarket, PassiveParticipant
 
 import urllib
 import urllib2
@@ -54,7 +55,7 @@ class Market(BaseMarket):
             req = urllib2.Request(url)
         f = urllib2.urlopen(req)
         jdata = json.load(f)
-        print jdata
+#        print jdata
         return jdata
 
     def getTicker(self):
@@ -80,3 +81,28 @@ class Market(BaseMarket):
                                low=data2['low'], average=data2['avg'],
                                last=data2['last'], sell=data2['ask'],
                                buy=data2['bid'] ) 
+
+    def getOpenTrades(self):
+        url = _URL + "order_book/"
+        data = self.json_request(url)
+#        print data
+        trades = []
+        # FIXME Figure out how to represent and differenciate bids and asks
+        for type in ('bids', 'asks'):
+            for offer in data[type]:
+                rate = Decimal(offer[0])
+                amount = Decimal(offer[1])
+                from_amount = Amount(rate * amount, USD)
+                to_amount = Amount(1 * amount, BTC)
+                from_entity = None
+                to_entity = None
+                if 'bids' == type:
+                    from_entity = PassiveParticipant(self)
+                else:
+                    to_entity = PassiveParticipant(self)
+                trades.append(concepts.market.Trade(from_amount = from_amount,
+                                                    to_amount = to_amount,
+                                                    from_entity = from_entity,
+                                                    to_entity = to_entity,
+                                                    market=self))
+        return trades
