@@ -64,9 +64,8 @@ class Ticker( object ):
         high, low,average,last,sell,buy: ExchangeRate.
         '''
         assert isinstance(market, Market)
-        assert all( [isinstance(x, ExchangeRate) for x in (high,low, average, last, sell, buy)] )
+        assert all( [ x is None or isinstance(x, ExchangeRate) for x in (high,low, average, last, sell, buy)] )
         assert (volume is None) or (type(volume)==long)
-        assert all( [isinstance(x, ExchangeRate) for x in (high,low, average, last, sell, buy)] )
         assert (buy is None and sell is None) or (buy<=sell) #market invariant. The market always buys a currency cheaper than it sells it
         assert isinstance(time, datetime.datetime)
         self.market, self.time, self.volume= market, time, volume
