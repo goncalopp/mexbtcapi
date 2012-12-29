@@ -32,18 +32,18 @@ class Market(object):
         '''returns all completed trades'''
         raise NotImplementedError()
 
-class Party( Market ):
-    '''Represents a party in a market'''
+class Participant( Market ):
+    '''Represents a participant in a market (which places'''
     def __init__(self, market):
         assert isinstance( market, Market )
         self.market= market
 
-class PassiveParty( Party ):
-    '''A party over which the user has no control'''
+class PassiveParticipant( Participant ):
+    '''A participant over which the user has no control'''
     pass
 
-class ActiveParty( Party ):
-    '''A party under user control'''
+class ActiveParticipant( Participant ):
+    '''A participant under user control (may be the user itself)'''
     def placeTrade( trade ):
         '''places a trade in the market'''
         raise NotImplementedError()
@@ -51,6 +51,10 @@ class ActiveParty( Party ):
         raise NotImplementedError()
     class TradeAlreadyClosed( Exception ):
         '''occurs when trying to cancel a already-closed trade'''
+        pass
+    class NotAuthorized( Exception ):
+        '''Occurs when the user is not authorized to do the requested 
+        operation'''
         pass
 
 class Ticker( object ):
@@ -71,7 +75,4 @@ class Ticker( object ):
         self.market, self.time, self.volume= market, time, volume
         self.high, self.low,self.average,self.last, self.sell, self.buy= high, low, average, last, sell, buy
 
-class NotAuthorized( Exception ):
-    '''Occurs when the user is not authorized to do the requested 
-    operation'''
-    pass
+
