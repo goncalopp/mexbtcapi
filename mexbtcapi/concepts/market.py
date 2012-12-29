@@ -16,6 +16,8 @@ class Trade(object):
         self.opening_time=  opening_time
         self.closing_time=  closing_time
         self.market=market
+    def __str__(self):
+        return "{0} -> {1}".format(self.from_amount, self.to_amount)
 
 class Market(object):
     '''Represents a market - where Trade's are made'''
@@ -35,6 +37,9 @@ class Market(object):
     def getClosedTrades(self):
         '''returns all completed trades'''
         raise NotImplementedError()
+    
+    def __str__(self):
+        return self.name
 
 class Participant( Market ):
     '''Represents a participant in a market (which places'''
