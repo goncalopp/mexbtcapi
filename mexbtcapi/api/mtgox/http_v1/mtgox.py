@@ -26,10 +26,10 @@
 import base64
 import hashlib
 import hmac
+import json
 import time
 import urllib
 import urllib2
-import json
 
 from decimal import Decimal
 
@@ -37,47 +37,60 @@ _URL = "https://mtgox.com/api/1/"
 CURRENCY = "USD"
 RETURN_TYPE = int
 
+
 class MtGoxError(Exception):
+
     def __init__(self, value):
         self.value = value
+
     def __str__(self):
         return repr(self.value)
 
+
 class _Multiplier(dict):
+
     def __getitem__(self, currency_):
-        if self.has_key(currency_) is True:
+        if currency_ in self:
             return self.get(currency_)
         else:
             info = currency(currency_)
             decimals = int(info['decimals'])
             value = pow(10, decimals)
-            self.update({currency_ : value})
+            self.update({
+                currency_: value
+            })
             return value
-        
+
+
 multiplier = _Multiplier()
+
 
 def _value_hook(values):
     d = dict()
     ideal = None
     keep = None
     drop = None
+
     if RETURN_TYPE in (Decimal, float):
         value = 'value'
         keep = ('amount', 'price', 'value')
         drop = ('currency', 'display', 'item', 'price_currency',
                 'amount_int', 'price_int', 'value_int')
+
     if RETURN_TYPE is int:
         value = 'value_int'
         keep = ('amount_int', 'price_int', 'value_int')
         drop = ('currency', 'display', 'item', 'price_currency',
                 'amount', 'price', 'value')
+
     if RETURN_TYPE is str:
         value = 'display'
         keep = ()
         drop = ('currency',
                 'amount', 'price', 'value', 'item', 'price_currency',
                 'amount_int', 'price_int', 'value_int')
-    for k,v in values.iteritems():
+
+    for k, v in values.iteritems():
         if k in drop:
             continue
         elif k in keep:
@@ -86,18 +99,22 @@ def _value_hook(values):
             d[k] = int(v)
         else:
             d[k] = v
+
     if len(d) is 1:
         return d.values()[0]
     else:
         return d
-            
+
+
 def _generic(name, data=None):
     url = _URL + 'generic/public/' + name
     return _json_request(url, data)
 
+
 def _specific(name, currency, data=None):
     url = _URL + 'BTC' + currency + '/public/' + name
-    return _json_request(url, data)        
+    return _json_request(url, data)
+
 
 def _json_request(url, data=None):
     if data is not None:
@@ -113,10 +130,12 @@ def _json_request(url, data=None):
     else:
         raise MtGoxError(jdata['error'])
 
+
 def currency(currency):
     """Return info for a given currency symbol (BTC, USD, EUR)."""
-    data = {'currency' : currency}
+    data = {'currency': currency}
     return _generic('currency', data=data)
+
 
 def depth(currency=CURRENCY):
     """Return depth for a given currency."""
@@ -125,16 +144,20 @@ def depth(currency=CURRENCY):
     else:
         return _specific('depth', currency)
 
+
 def depth_full(currency=CURRENCY):
     return _specific('fulldepth', currency)
+
 
 def ticker(currency=CURRENCY):
     """Return ticker for a given currency."""
     return _specific('ticker', currency)
 
+
 def trades(currency=CURRENCY):
     """Return trades for a given currency."""
     return _specific('trades', currency)
+
 
 def cancelled_trades(currency=CURRENCY):
     """Return a list of all the cancelled trade ids this last month."""
@@ -143,7 +166,7 @@ def cancelled_trades(currency=CURRENCY):
 
 class Private:
     """Interface to a MtGox account."""
-    
+
     def __init__(self, key, secret):
         self._key = key
         self._secret = base64.b64decode(secret)
@@ -154,20 +177,20 @@ class Private:
 
     def _specific(self, name, currency, data=None):
         url = _URL + 'BTC' + currency + '/private/' + name
-        return self._json_request(url, data)        
-        
+        return self._json_request(url, data)
+
     def _get_signature(self, data):
         h = hmac.new(self._secret, data, hashlib.sha512)
         return base64.b64encode(h.digest())
 
     def _request(self, url, data):
         if data is None:
-            data = {'nonce' : time.time()}
+            data = {'nonce': time.time()}
         else:
-            data.update({'nonce' : time.time()})
+            data.update({'nonce': time.time()})
         data = urllib.urlencode(data)
         signature = self._get_signature(data)
-        
+
         request = urllib2.Request(url, data)
         request.add_header('Rest-Key', self._key)
         request.add_header('Rest-Sign', signature)
@@ -176,7 +199,7 @@ class Private:
     def _json_request(self, url, data=None):
         req = self._request(url, data)
         f = urllib2.urlopen(req)
-        jdata = json.load(f)#, object_pairs_hook=_pairs_hook)
+        jdata = json.load(f)  # , object_pairs_hook=_pairs_hook)
         if jdata['result'] == 'success':
             return jdata['return']
         else:
@@ -185,13 +208,14 @@ class Private:
     def info(self):
         """Return account info"""
         return self._generic('info')
-        
+
     def orders(self):
         """Return standing orders"""
         return self._generic('orders')
 
     def cancel_ask(self, oid):
         return self._cancel(oid, 1)
+
     def cancel_bid(self, oid):
         return self._cancel(oid, 2)
 
@@ -199,8 +223,8 @@ class Private:
         # MtGox doesn't have a method to cancel orders for API 1.
         # type: 1 for sell order or 2 for buy order
         url = "https://mtgox.com/api/0/cancelOrder.php"
-        data = {'oid' : oid,
-                'type' : type}
+        data = {'oid': oid,
+                'type': type}
         req = self._request(url, data)
         f = urllib2.urlopen(req)
         data = json.load(f)
@@ -214,10 +238,10 @@ class Private:
         is interpreted as 1.23BTC.
         """
         self._order_add('ask', amount, price, currency)
-        
+
     def bid(self, amount, price, currency=CURRENCY):
         """Buy bitcoins
-        
+
         If price is an int, it is assumed that it is in
         an expanded format. For example, int(12300000)BTC
         is interpreted as 1.23BTC.
@@ -231,9 +255,9 @@ class Private:
             price = int(price * multiplier[currency])
         assert type(amount) == int
         assert type(price) == int
-        data = {'type' : order_type,
-                'amount_int' : amount,
-                'price_int' : price}
+        data = {'type': order_type,
+                'amount_int': amount,
+                'price_int': price}
         return self._specific('order/add', currency, data)
 
     def withdrawl_btc(self, address, amount):
@@ -241,11 +265,10 @@ class Private:
         if type(amount) in (Decimal, float):
             amount = int(amount * multiplier['BTC'])
         assert type(amount) == int
-        data = {'group1' : "BTC",
-                'btca' : address,
-                'amount' : amount}
+        data = {'group1': "BTC",
+                'btca': address,
+                'amount': amount}
         req = self._request(url, data)
         f = urllib2.urlopen(req)
         data = json.load(f)
         return data
-
