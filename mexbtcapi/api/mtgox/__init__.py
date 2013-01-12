@@ -1,4 +1,4 @@
-from mexbtcapi.api.mtgox.http_v1.high_level import MARKET_NAME, Market
+from mexbtcapi.api.mtgox.http_v1.high_level import Market
 
-name = MARKET_NAME
+name = Market.MARKET_NAME
 market = Market
