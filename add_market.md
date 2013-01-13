@@ -14,22 +14,22 @@ Steps
   - If you're dealing with decimal (non-integer) numbers, you should NOT use float. Use string or Decimal instead (reasoning is provided below).
  - Write a separate (wrapper) module that uses your market API module and implements the MExBtcAPI interfaces
   - You should familiarize yourself with the classes in the mexbtcapi/concepts directory first
-  - If there's data or functionality that is exposed by MExBtcAPI but your market doesn't provide, a revision of the interfaces is probably in order - you should file a bug request for that.
+  - If there's data or functionality that is exposed by MExBtcAPI but your market doesn't provide, a revision of the interfaces is probably in order - you should file a bug report for that.
 
 Why should I write two modules instead of only one?
 =========================================
 
-If you write two modules:
-
  - The market API can be used independently of MExBtcAPI
- - The interface and implementation are separated
+ - The interfacing code and implementation are separated
 
 
 Why shouldn't I use float?
 ====================
 
-Put shortly, since some finite decimal (base 10\. numbers don't have a finite binary representation, floats introduce rounding errors that you really want to avoid when doing accounting, and dealing with money, in general.
+Put shortly, since some finite decimal (base 10) numbers don't have a finite binary representation, floats introduce rounding errors that you really want to avoid when doing accounting, and dealing with money, in general.
 A more detailed explanation can be found [on StackOverflow](http://stackoverflow.com/questions/61872/use-float-or-decimal-for-accounting-application-dollar-amount).
 
-# Anything else I should know?
+Anything else I should know?
+========================
+
 Probably. If you have any questions or feel like something is missing here, don't hesitate to contact the maintainer or file a bug
