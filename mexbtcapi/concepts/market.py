@@ -6,17 +6,18 @@ class Trade(object):
     """Represents an exchange of two currency amounts.
     May include the entities between which the trade is made
     """
-    def __init__(self, from_amount, to_amount, from_entity=None,
+    def __init__(self, from_amount, exchange_rate, from_entity=None,
                  to_entity=None, opening_time=None, closing_time=None,
                  market=None):
-        assert all([isinstance(x, Amount) for x in (from_amount, to_amount)])
+        assert isinstance(from_amount, Amount)
+        assert isinstance(exchange_rate, ExchangeRate)
         assert all([x is None or isinstance(x, Participant) for x
                                             in (from_entity, to_entity)])
         assert all([x is None or isinstance(x, datetime) for x
                                             in (opening_time, closing_time)])
         assert isinstance(market, Market)  # must not be null
         self.from_amount = from_amount
-        self.to_amount = to_amount
+        self.exchange_rate = exchange_rate
         self.from_entity = from_entity
         self.to_entity = to_entity
         self.opening_time = opening_time
