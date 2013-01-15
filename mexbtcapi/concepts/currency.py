@@ -1,5 +1,8 @@
 from decimal import Decimal
-from mexbtcapi import log
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def check_number_for_decimal_conversion(number):
