@@ -30,19 +30,37 @@ class Trade(object):
 
 
 class Order(object):
-    """
+    """Represents an order to buy or sell a number of from_amount for
+    exchange_rate.
+
+    For now, more specific properties can be set through the properties
+    parameter of the constructor.
     """
 
-    def __init__(self, market, timestamp, from_amount, exchange_rate):
+    BUY = 'BUY'
+    SELL = 'SELL'
+
+    def __init__(self, market, timestamp,
+                 buy_or_sell, from_amount, exchange_rate, properties=""):
         assert isinstance(market, Market)  # must not be null
         assert isinstance(timestamp, datetime)  # must not be null
+        assert buy_or_sell in [self.BUY, self.SELL]
         assert isinstance(from_amount, Amount)
         assert isinstance(exchange_rate, ExchangeRate)
+        assert isinstance(properties, str)
 
         self.market = market
         self.timestamp = timestamp
+        self.buy_or_sell = buy_or_sell
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
+        self.properties = properties
+
+    def is_buy_order(self):
+        return self.buy_or_sell == self.BUY
+
+    def is_sell_order(self):
+        return self.buy_or_sell == self.SELL
 
     def __str__(self):
         return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
