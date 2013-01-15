@@ -6,26 +6,50 @@ class Trade(object):
     """Represents an exchange of two currency amounts.
     May include the entities between which the trade is made
     """
-    def __init__(self, from_amount, exchange_rate, from_entity=None,
-                 to_entity=None, opening_time=None, closing_time=None,
-                 market=None):
+    def __init__(self, market, timestamp, from_amount, exchange_rate,
+                 from_entity=None, to_entity=None):
+        assert isinstance(market, Market)  # must not be null
+        assert isinstance(timestamp, datetime)  # must not be null
         assert isinstance(from_amount, Amount)
         assert isinstance(exchange_rate, ExchangeRate)
         assert all([x is None or isinstance(x, Participant) for x
                                             in (from_entity, to_entity)])
-        assert all([x is None or isinstance(x, datetime) for x
-                                            in (opening_time, closing_time)])
-        assert isinstance(market, Market)  # must not be null
+        self.market = market
+        self.timestamp = timestamp
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
         self.from_entity = from_entity
         self.to_entity = to_entity
-        self.opening_time = opening_time
-        self.closing_time = closing_time
-        self.market = market
 
     def __str__(self):
-        return "{0} -> {1}".format(self.from_amount, self.to_amount)
+        return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
+
+    def __repr__(self):
+        return "<Trade({0}, {1}, {2}, {3}>".format(self.market, self.timestamp,
+                    self.from_amount, self.exchange_rate)
+
+
+class Order(object):
+    """
+    """
+
+    def __init__(self, market, timestamp, from_amount, exchange_rate):
+        assert isinstance(market, Market)  # must not be null
+        assert isinstance(timestamp, datetime)  # must not be null
+        assert isinstance(from_amount, Amount)
+        assert isinstance(exchange_rate, ExchangeRate)
+
+        self.market = market
+        self.timestamp = timestamp
+        self.from_amount = from_amount
+        self.exchange_rate = exchange_rate
+
+    def __str__(self):
+        return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
+
+    def __repr__(self):
+        return "<Order({0}, {1}, {2}, {3}>".format(self.market, self.timestamp,
+                    self.from_amount, self.exchange_rate)
 
 
 class Market(object):
