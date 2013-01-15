@@ -6,6 +6,7 @@ class Trade(object):
     """Represents an exchange of two currency amounts.
     May include the entities between which the trade is made
     """
+
     def __init__(self, market, timestamp, from_amount, exchange_rate,
                  from_entity=None, to_entity=None):
         assert isinstance(market, Market)  # must not be null
@@ -20,6 +21,10 @@ class Trade(object):
         self.exchange_rate = exchange_rate
         self.from_entity = from_entity
         self.to_entity = to_entity
+
+    @property
+    def to_amount(self):
+        return self.exchange_rate.convert(self.from_amount)
 
     def __str__(self):
         return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
@@ -71,28 +76,33 @@ class Order(object):
 
 
 class Market(object):
-    """Represents a market - where Trade's are made
+    """Represents a market - where Trades are made
     """
 
-    def __init__(self, market_name, c1, c2):
-        """c1 is the "buy" currency"""
+    def __init__(self, market_name, buy_currency, sell_currency):
+        """Currency1 is the "buy" currency"""
         self.name = market_name
-        self.c1, self.c2 = c1, c2
+        self.currency1 = buy_currency
+        self.currency2 = sell_currency
 
     def getTicker(self):
-        """returns the most recent ticker"""
+        """Returns the most recent ticker"""
         raise NotImplementedError()
 
-    def getOpenTrades(self):
-        """returns a list with all the open Trade's in the market"""
+    def getDepth(self):
+        """Returns the depth book"""
         raise NotImplementedError()
 
-    def getClosedTrades(self):
-        """returns all completed trades"""
+    def getTrades(self):
+        """Returns all completed trades"""
         raise NotImplementedError()
 
     def __str__(self):
         return self.name
+
+    def __repr__(self):
+        return "<Market({0}, {1}, {2})>".format(self.name,
+                    self.currency1, self.currency2)
 
 
 class Participant(Market):
