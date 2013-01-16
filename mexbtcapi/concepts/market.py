@@ -7,20 +7,16 @@ class Trade(object):
     May include the entities between which the trade is made
     """
 
-    def __init__(self, market, timestamp, from_amount, exchange_rate,
-                 from_entity=None, to_entity=None):
+    def __init__(self, market, timestamp, from_amount, exchange_rate):
         assert isinstance(market, Market)  # must not be null
         assert isinstance(timestamp, datetime)  # must not be null
         assert isinstance(from_amount, Amount)
         assert isinstance(exchange_rate, ExchangeRate)
-        assert all([x is None or isinstance(x, Participant) for x
-                                            in (from_entity, to_entity)])
+
         self.market = market
         self.timestamp = timestamp
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
-        self.from_entity = from_entity
-        self.to_entity = to_entity
 
     @property
     def to_amount(self):
@@ -45,14 +41,17 @@ class Order(object):
     BUY = 'BUY'
     SELL = 'SELL'
 
-    def __init__(self, market, timestamp,
-                 buy_or_sell, from_amount, exchange_rate, properties=""):
+    def __init__(self, market, timestamp, buy_or_sell, from_amount,
+                 exchange_rate, properties="",
+                 from_entity=None, to_entity=None):
         assert isinstance(market, Market)  # must not be null
         assert isinstance(timestamp, datetime)  # must not be null
         assert buy_or_sell in [self.BUY, self.SELL]
         assert isinstance(from_amount, Amount)
         assert isinstance(exchange_rate, ExchangeRate)
         assert isinstance(properties, str)
+        assert all([x is None or isinstance(x, Participant) for x
+                                            in (from_entity, to_entity)])
 
         self.market = market
         self.timestamp = timestamp
@@ -60,6 +59,8 @@ class Order(object):
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
         self.properties = properties
+        self.from_entity = from_entity
+        self.to_entity = to_entity
 
     def is_buy_order(self):
         return self.buy_or_sell == self.BUY
@@ -132,13 +133,13 @@ class ActiveParticipant(Participant):
     def cancelTrade(trade):
         raise NotImplementedError()
 
-    class TradeAlreadyClosed(Exception):
-        """occurs when trying to cancel a already-closed trade"""
+    class TradeAlreadyClosedError(Exception):
+        """Occurs when trying to cancel a already-closed trade"""
         pass
 
-    class NotAuthorized(Exception):
-        """Occurs when the user is not authorized to do the requested
-        operation"""
+    class NotAuthorizedError(Exception):
+        """Occurs when the user is not authorized to do the requested operation
+        """
         pass
 
 
