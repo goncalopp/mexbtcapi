@@ -212,6 +212,21 @@ class Private:
     def orders(self):
         """Return standing orders"""
         return self._generic('orders')
+    
+    def wallet_history(self,type='',date_start='',date_end='',trade_id='',page='',currency=CURRENCY) :
+        url = "https://mtgox.com/api/1/generic/wallet/history"
+        data = {
+            'currency' : currency, 
+            'type' : type,
+            'date_start' : date_start,
+            'date_end' : date_end,
+            'trade_id' : trade_id,
+            'page' : page
+                }
+        req = self._request(url,data)
+        f = urllib2.urlopen(req)
+        data = json.load(f)
+        return data
 
     def cancel_ask(self, oid):
         return self._cancel(oid, 1)
