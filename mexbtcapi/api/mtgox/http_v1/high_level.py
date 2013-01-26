@@ -5,7 +5,7 @@ from functools import partial
 from mexbtcapi import concepts
 from mexbtcapi.concepts.currencies import BTC
 from mexbtcapi.concepts.currency import Amount, ExchangeRate
-from mexbtcapi.concepts.market import Market as BaseMarket, Trade
+from mexbtcapi.concepts.market import Market as BaseMarket, Order, Trade
 import mtgox as low_level
 
 
@@ -24,6 +24,9 @@ class Market(BaseMarket):
         self.xchg_factory = partial(concepts.currency.ExchangeRate,
                                     BTC, currency)
 
+    def _multiplier(self, currency):
+        return self.multiplier[currency.name]
+
     def getTicker(self):
         time = datetime.now()
         data = low_level.ticker(self.currency2.name)
@@ -41,10 +44,26 @@ class Market(BaseMarket):
     def getDepth(self):
         low_level_depth = low_level.depth()
 
-        # convert depth to array of Trades
-        depth = []
+        return {
+            'asks': self._depthToOrders(low_level_depth['asks'], Order.ASK),
+            'bids': self._depthToOrders(low_level_depth['bids'], Order.BID),
+        }
 
-        return depth
+    def _depthToOrders(self, depth, order_type):
+        orders = []
+
+        for d in depth:
+            timestamp = datetime.fromtimestamp(d['stamp'] / 1000 / 1000)
+            amount = Amount(
+                Decimal(d['amount_int']) / self._multiplier(BTC), BTC)
+            price = ExchangeRate(
+                self.currency1, BTC,
+                Decimal(d['price_int']) / self._multiplier(self.currency1))
+            order = Order(self, timestamp, order_type, amount, price)
+            orders.append(order)
+
+        return orders
+
 
     def getTrades(self):
         low_level_trades = low_level.trades()
@@ -63,8 +82,6 @@ class Market(BaseMarket):
 
             t = Trade(self, timestamp, btc_amount, exchange_rate)
             t.tid = ['tid']
-
-            import ipdb; ipdb.set_trace()
 
             trades.append(t)
 

@@ -38,15 +38,15 @@ class Order(object):
     parameter of the constructor.
     """
 
-    BUY = 'BUY'
-    SELL = 'SELL'
+    BID = 'BID'
+    ASK = 'ASK'
 
     def __init__(self, market, timestamp, buy_or_sell, from_amount,
                  exchange_rate, properties="",
                  from_entity=None, to_entity=None):
         assert isinstance(market, Market)  # must not be null
         assert isinstance(timestamp, datetime)  # must not be null
-        assert buy_or_sell in [self.BUY, self.SELL]
+        assert buy_or_sell in [self.BID, self.ASK]
         assert isinstance(from_amount, Amount)
         assert isinstance(exchange_rate, ExchangeRate)
         assert isinstance(properties, str)
