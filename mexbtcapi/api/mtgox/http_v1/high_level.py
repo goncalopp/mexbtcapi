@@ -31,11 +31,12 @@ class Market(BaseMarket):
         time = datetime.now()
         data = low_level.ticker(self.currency2.name)
 
-        data2 = [(Decimal(data[name]['value_int']) / self.multiplier[self.currency1.name])
-                    for name in ('high', 'low', 'avg', 'last', 'sell', 'buy')]
+        data2 = [Decimal(data[name]['value_int']) /
+                 self._multiplier(self.currency1)
+                 for name in ('high', 'low', 'avg', 'last', 'sell', 'buy')]
         high, low, avg, last, sell, buy = map(self.xchg_factory, data2)
 
-        volume = long(data['vol']['value_int']) / self.multiplier[self.currency2.name]
+        volume = long(data['vol']['value_int']) / self._multiplier(BTC)
         ticker = MtgoxTicker(market=self, time=time, high=high, low=low,
                              average=avg, last=last, sell=sell, buy=buy,
                              volume=volume)
@@ -64,7 +65,6 @@ class Market(BaseMarket):
 
         return orders
 
-
     def getTrades(self):
         low_level_trades = low_level.trades()
 
@@ -72,9 +72,9 @@ class Market(BaseMarket):
         trades = []
         for trade in low_level_trades:
             price = Decimal(trade['price_int']) / \
-                        self.multiplier[self.currency1.name]
+                self._multiplier(self.currency1)
             amount = Decimal(trade['amount_int']) / \
-                        self.multiplier[self.currency2.name]
+                self._multiplier(BTC)
             timestamp = datetime.fromtimestamp(trade['date'])
 
             btc_amount = Amount(amount, self.currency2)

@@ -10,7 +10,7 @@ def check_number_for_decimal_conversion(number):
     b = isinstance(number, (str, unicode, Decimal))
     if not (a or b):
         logger.warning("You are using a number (" + str(number) +
-                    ") that is not suitable to convert to Decimal!")
+                       ") that is not suitable to convert to Decimal!")
 
 
 class Currency(object):
@@ -56,7 +56,8 @@ class ExchangeRate(object):
         return cmp(self.exchange_rate, other.exchange_rate)
 
     def __repr__(self):
-        return "<ExchangeRate({0} {1}/{2})>".format(self.exchange_rate, self.c1.name, self.c2.name)
+        return "<ExchangeRate({0} {1}/{2})>".format(
+            self.exchange_rate, self.c1.name, self.c2.name)
 
 
 class Amount(object):
