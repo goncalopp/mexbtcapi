@@ -22,21 +22,21 @@ class Market(BaseMarket):
         # to convert low level data
         self.multiplier = low_level.multiplier
         self.xchg_factory = partial(concepts.currency.ExchangeRate,
-                                    BTC, currency)
+                                    currency, BTC)
 
     def _multiplier(self, currency):
         return self.multiplier[currency.name]
 
     def getTicker(self):
         time = datetime.now()
-        data = low_level.ticker(self.currency2.name)
+        data = low_level.ticker(self.currency1.name)
 
         data2 = [Decimal(data[name]['value_int']) /
                  self._multiplier(self.currency1)
                  for name in ('high', 'low', 'avg', 'last', 'sell', 'buy')]
         high, low, avg, last, sell, buy = map(self.xchg_factory, data2)
 
-        volume = long(data['vol']['value_int']) / self._multiplier(BTC)
+        volume = Decimal(data['vol']['value_int']) / self._multiplier(BTC)
         ticker = MtgoxTicker(market=self, time=time, high=high, low=low,
                              average=avg, last=last, sell=sell, buy=buy,
                              volume=volume)
@@ -77,8 +77,8 @@ class Market(BaseMarket):
                 self._multiplier(BTC)
             timestamp = datetime.fromtimestamp(trade['date'])
 
-            btc_amount = Amount(amount, self.currency2)
-            exchange_rate = ExchangeRate(self.currency1, self.currency2, price)
+            btc_amount = Amount(amount, BTC)
+            exchange_rate = ExchangeRate(self.currency1, BTC, price)
 
             t = Trade(self, timestamp, btc_amount, exchange_rate)
             t.tid = ['tid']

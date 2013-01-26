@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
 from currency import ExchangeRate, Amount
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 
 class Trade(object):
@@ -163,7 +164,7 @@ class Ticker(object):
         assert isinstance(market, Market)
         assert all([x is None or isinstance(x, ExchangeRate) for x in
                         (high, low, average, last, sell, buy)])
-        assert (volume is None) or (type(volume) == long)
+        assert (volume is None) or (type(volume) == long) or (type(volume) == Decimal)
         assert (buy is None and sell is None) or (buy <= sell)
         assert isinstance(time, datetime)
         self.market, self.time, self.volume = market, time, volume
