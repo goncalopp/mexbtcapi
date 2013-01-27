@@ -3,7 +3,7 @@ def constant_generator(locals_dictionary, keys, values=None):
     constants), and their values, this function assigns each constant
     it's value (or an integer, if values=None) and registers them as
     variables"""
-    if values == None:
+    if values is None:
         values = range(len(keys))       # the constants' values - integers
     forward = dict(zip(keys, values))   # name to number lookup
     reverse = keys                      # number to name lookup

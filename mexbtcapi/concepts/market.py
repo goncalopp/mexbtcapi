@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
 from currency import ExchangeRate, Amount
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 
 class Trade(object):
@@ -18,6 +19,10 @@ class Trade(object):
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
 
+    @property
+    def to_amount(self):
+        return self.exchange_rate.convert(self.from_amount)
+
     def __str__(self):
         return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
 
@@ -34,15 +39,15 @@ class Order(object):
     parameter of the constructor.
     """
 
-    BUY = 'BUY'
-    SELL = 'SELL'
+    BID = 'BID'
+    ASK = 'ASK'
 
     def __init__(self, market, timestamp, buy_or_sell, from_amount,
                  exchange_rate, properties="",
                  from_entity=None, to_entity=None):
         assert isinstance(market, Market)  # must not be null
         assert isinstance(timestamp, datetime)  # must not be null
-        assert buy_or_sell in [self.BUY, self.SELL]
+        assert buy_or_sell in [self.BID, self.ASK]
         assert isinstance(from_amount, Amount)
         assert isinstance(exchange_rate, ExchangeRate)
         assert isinstance(properties, str)
@@ -73,28 +78,33 @@ class Order(object):
 
 
 class Market(object):
-    """Represents a market - where Trade's are made
+    """Represents a market - where Trades are made
     """
 
-    def __init__(self, market_name, c1, c2):
-        """c1 is the "buy" currency"""
+    def __init__(self, market_name, buy_currency, sell_currency):
+        """Currency1 is the "buy" currency"""
         self.name = market_name
-        self.c1, self.c2 = c1, c2
+        self.currency1 = buy_currency
+        self.currency2 = sell_currency
 
     def getTicker(self):
-        """returns the most recent ticker"""
+        """Returns the most recent ticker"""
         raise NotImplementedError()
 
-    def getOpenTrades(self):
-        """returns a list with all the open Trade's in the market"""
+    def getDepth(self):
+        """Returns the depth book"""
         raise NotImplementedError()
 
-    def getClosedTrades(self):
-        """returns all completed trades"""
+    def getTrades(self):
+        """Returns all completed trades"""
         raise NotImplementedError()
 
     def __str__(self):
         return self.name
+
+    def __repr__(self):
+        return "<Market({0}, {1}, {2})>".format(self.name,
+                    self.currency1, self.currency2)
 
 
 class Participant(Market):
@@ -154,7 +164,7 @@ class Ticker(object):
         assert isinstance(market, Market)
         assert all([x is None or isinstance(x, ExchangeRate) for x in
                         (high, low, average, last, sell, buy)])
-        assert (volume is None) or (type(volume) == long)
+        assert (volume is None) or (type(volume) == long) or (type(volume) == Decimal)
         assert (buy is None and sell is None) or (buy <= sell)
         assert isinstance(time, datetime)
         self.market, self.time, self.volume = market, time, volume

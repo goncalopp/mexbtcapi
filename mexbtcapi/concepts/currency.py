@@ -1,13 +1,16 @@
 from decimal import Decimal
-from mexbtcapi import log
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def check_number_for_decimal_conversion(number):
     a = type(number) in (int, long)
     b = isinstance(number, (str, unicode, Decimal))
     if not (a or b):
-        log.warning("You are using a number (" + str(number) +
-                    ") that is not suitable to convert to Decimal!")
+        logger.warning("You are using a number (" + str(number) +
+                       ") that is not suitable to convert to Decimal!")
 
 
 class Currency(object):
@@ -18,7 +21,7 @@ class Currency(object):
         self.name = name
 
     def __repr__(self):
-        return self.name
+        return "<Currency({0})>".format(self.name)
 
 
 class ExchangeRate(object):
@@ -31,15 +34,17 @@ class ExchangeRate(object):
         # the "buy" currency
         assert c1 != c2
         check_number_for_decimal_conversion(exchange_rate)
-        self.c1, self.c2 = c1, c2
+        self.c1 = c1
+        self.c2 = c2
         self.exchange_rate = Decimal(exchange_rate)
 
     def convert(self, amount):
         assert isinstance(amount, Amount)
+
         if self.c1 == amount.currency:
-            return Amount(amount.value * self.exchange_rate, self.c2)
+            return Amount((1 / amount.value) * self.exchange_rate, self.c2)
         elif self.c2 == amount.currency:
-            return Amount((1 / amount.value) * self.exchange_rate, self.c1)
+            return Amount(amount.value * self.exchange_rate, self.c1)
         else:
             raise Exception("Can't exchange currencies with this ExchangeRate")
 
@@ -51,7 +56,8 @@ class ExchangeRate(object):
         return cmp(self.exchange_rate, other.exchange_rate)
 
     def __repr__(self):
-        return "%.2f %s/%s" % (self.exchange_rate, self.c2.name, self.c1.name)
+        return "<ExchangeRate({0} {1}/{2})>".format(
+            self.exchange_rate, self.c1.name, self.c2.name)
 
 
 class Amount(object):
@@ -60,7 +66,9 @@ class Amount(object):
 
     def __init__(self, value, currency):
         check_number_for_decimal_conversion(value)
-        self.value, self.currency = Decimal(value), currency
+
+        self.value = Decimal(value)
+        self.currency = currency
 
     def convert(self, currencyequivalence, to_currency):
         if self.currency != to_currency:
