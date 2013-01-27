@@ -14,8 +14,7 @@ def check_number_for_decimal_conversion(number):
 
 
 class Currency(object):
-    """
-    """
+    """A currency (USD, EUR, ...)"""
 
     def __init__(self, name):
         self.name = name
@@ -23,10 +22,12 @@ class Currency(object):
     def __repr__(self):
         return "<Currency({0})>".format(self.name)
 
+    def __str__(self):
+        return self.name
+
 
 class ExchangeRate(object):
-    """
-    """
+    """The proportion between two currencies' values"""
 
     def __init__(self, c1, c2, exchange_rate):
         assert all([isinstance(x, Currency) for x in (c1, c2)])
@@ -56,13 +57,16 @@ class ExchangeRate(object):
         return cmp(self.exchange_rate, other.exchange_rate)
 
     def __repr__(self):
-        return "<ExchangeRate({0} {1}/{2})>".format(
+        return "<ExchangeRate({:.2f} {}/{})>".format(
+            self.exchange_rate, self.c1.name, self.c2.name)
+
+    def __str__(self):
+        return "{:.2f} {}/{}".format(
             self.exchange_rate, self.c1.name, self.c2.name)
 
 
 class Amount(object):
-    """
-    """
+    """An amount of a given currency"""
 
     def __init__(self, value, currency):
         check_number_for_decimal_conversion(value)
@@ -79,7 +83,10 @@ class Amount(object):
         return Amount(self.value, self.currency)
 
     def __repr__(self):
-        return "%.2f %s" % (self.value, self.currency)
+        return "<Amount({:.2f} {})>".format(self.value, self.currency)
+
+    def __str__(self):
+        return "{:.2f} {}".format(self.value, self.currency)
 
     def __iadd__(self, other):
         if type(other) in (int, float):
