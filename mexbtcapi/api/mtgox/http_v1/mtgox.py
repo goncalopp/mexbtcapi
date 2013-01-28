@@ -212,11 +212,11 @@ class Private:
     def orders(self):
         """Return standing orders"""
         return self._generic('orders')
-    
+
     def wallet_history(self,type='',date_start='',date_end='',trade_id='',page='',currency=CURRENCY) :
         url = "https://mtgox.com/api/1/generic/wallet/history"
         data = {
-            'currency' : currency, 
+            'currency' : currency,
             'type' : type,
             'date_start' : date_start,
             'date_end' : date_end,
@@ -252,7 +252,7 @@ class Private:
         an expanded format. For example, int(12300000)BTC
         is interpreted as 1.23BTC.
         """
-        self._order_add('ask', amount, price, currency)
+        return self._order_add('ask', amount, price, currency)
 
     def bid(self, amount, price, currency=CURRENCY):
         """Buy bitcoins
@@ -261,7 +261,7 @@ class Private:
         an expanded format. For example, int(12300000)BTC
         is interpreted as 1.23BTC.
         """
-        self._order_add('bid', amount, price, currency)
+        return self._order_add('bid', amount, price, currency)
 
     def _order_add(self, order_type, amount, price, currency):
         if type(amount) in (Decimal, float):

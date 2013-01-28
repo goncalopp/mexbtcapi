@@ -1,19 +1,43 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from functools import partial
+import logging
 
 from mexbtcapi import concepts
 from mexbtcapi.concepts.currencies import BTC
-from mexbtcapi.concepts.currency import Amount, ExchangeRate
-from mexbtcapi.concepts.market import Market as BaseMarket, Order, Trade
+from mexbtcapi.concepts.currency import Amount, Currency, ExchangeRate
+from mexbtcapi.concepts.market import ActiveParticipant, Market as BaseMarket, Order, Trade
 import mtgox as low_level
+
+
+logger = logging.getLogger(__name__)
 
 
 class MtgoxTicker(concepts.market.Ticker):
     TIME_PERIOD = timedelta(days=1)
 
+    def __repr__(self):
+        return \
+            "<MtgoxTicker({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})" \
+            .format(self.market, self.time, self.high, self.high, self.last,
+            self.volume, self.average, self.buy, self.sell)
 
-class Market(BaseMarket):
+
+class MtGoxOrder(Order):
+
+    def __init__(self, market, oid, timestamp, buy_or_sell, from_amount,
+                 exchange_rate, properties="", entity=None):
+        super(MtGoxOrder, self).__init__(market, timestamp, buy_or_sell, from_amount, exchange_rate, properties, entity)
+        self.oid = oid
+
+    def __repr__(self):
+        return \
+            "<MtGoxOrder({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}>" \
+            .format(self.market, self.timestamp, self.oid, self.buy_or_sell,
+            self.from_amount, self.exchange_rate, self.properties, self.entity)
+
+
+class MtGoxMarket(BaseMarket):
     MARKET_NAME = "MtGox"
 
     def __init__(self, currency):
@@ -28,6 +52,8 @@ class Market(BaseMarket):
         return self.multiplier[currency.name]
 
     def getTicker(self):
+        logger.debug("getting ticker")
+
         time = datetime.now()
         data = low_level.ticker(self.currency1.name)
 
@@ -43,6 +69,8 @@ class Market(BaseMarket):
         return ticker
 
     def getDepth(self):
+        logger.debug("getting depth")
+
         low_level_depth = low_level.depth()
 
         return {
@@ -66,6 +94,8 @@ class Market(BaseMarket):
         return orders
 
     def getTrades(self):
+        logger.debug("getting trades")
+
         low_level_trades = low_level.trades()
 
         # convert tradres to array of Trades
@@ -86,3 +116,76 @@ class Market(BaseMarket):
             trades.append(t)
 
         return trades
+
+
+class MtGoxParticipant(MtGoxMarket, ActiveParticipant):
+
+    def __init__(self, currency, key, secret):
+        MtGoxMarket.__init__(self, currency)
+
+        self.private = low_level.Private(key, secret)
+
+    def placeBidOrder(self, amount, price):
+        """places an Order in the market for price/amount"""
+
+        logger.debug("placing bid order")
+
+        oid = self.private.bid(amount.value, price.exchange_rate)
+
+        now = datetime.now()
+        return MtGoxOrder(self, oid, now, Order.BID, amount, price, entity=self)
+
+    def placeAskOrder(self, amount, price):
+        """places an Order in the market for price/amount"""
+
+        logger.debug("placing ask order")
+
+        oid = self.private.ask(amount, price)
+
+        now = datetime.now()
+        return MtGoxOrder(self, oid, now, Order.ASK, amount, price, entity=self)
+
+    def cancelOrder(self, order):
+        """Cancel an existing order"""
+        assert(isinstance(order, MtGoxOrder))
+
+        logger.debug("cancelling order {0}".format(order.oid))
+
+        oid = order.oid
+        if order.is_buy_order():
+            result = self.private.cancel_bid(oid)
+        else:
+            result = self.private.cancel_ask(oid)
+
+        if not result:
+            raise ActiveParticipant.ActiveParticipantError()
+
+    def getOpenOrders(self):
+        """Gets all the open orders"""
+
+        logger.debug("getting open orders")
+
+        low_level_orders = self.private.orders()
+        orders = []
+
+        for o in low_level_orders:
+            currency = Currency(o['currency'])
+            oid = o['oid']
+            timestamp = datetime.fromtimestamp(o['date'])
+            order_type = Order.BID if o['type'] else Order.ASK
+            amount = Amount(Decimal(o['amount']['value_int']) / self._multiplier(BTC), BTC)
+            price = ExchangeRate(currency, BTC, Decimal(o['price']['value_int']) / self._multiplier(currency))
+            order = MtGoxOrder(self, oid, timestamp, order_type, amount, price, entity=self)
+
+            # add additional status from MtGox
+            order.status = o['status']
+
+            orders.append(order)
+
+        return orders
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return "<MtGoxParticipant({0})>".format(self.currency1)
