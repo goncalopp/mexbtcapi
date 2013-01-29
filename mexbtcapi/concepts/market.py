@@ -64,7 +64,7 @@ class Order(object):
         return self.buy_or_sell == self.BID
 
     def is_sell_order(self):
-        return self.buy_or_sell == self.ASK
+        return self.buy_or_sell != self.BID
 
     def __str__(self):
         return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
