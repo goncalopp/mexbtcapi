@@ -43,16 +43,14 @@ class Order(object):
     ASK = 'ASK'
 
     def __init__(self, market, timestamp, buy_or_sell, from_amount,
-                 exchange_rate, properties="",
-                 from_entity=None, to_entity=None):
+                 exchange_rate, properties="", entity=None):
         assert isinstance(market, Market)  # must not be null
         assert isinstance(timestamp, datetime)  # must not be null
         assert buy_or_sell in [self.BID, self.ASK]
         assert isinstance(from_amount, Amount)
         assert isinstance(exchange_rate, ExchangeRate)
         assert isinstance(properties, str)
-        assert all([x is None or isinstance(x, Participant) for x
-                                            in (from_entity, to_entity)])
+        assert entity is None or isinstance(entity, Participant)
 
         self.market = market
         self.timestamp = timestamp
@@ -60,14 +58,13 @@ class Order(object):
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
         self.properties = properties
-        self.from_entity = from_entity
-        self.to_entity = to_entity
+        self.entity = entity
 
     def is_buy_order(self):
-        return self.buy_or_sell == self.BUY
+        return self.buy_or_sell == self.BID
 
     def is_sell_order(self):
-        return self.buy_or_sell == self.SELL
+        return self.buy_or_sell != self.BID
 
     def __str__(self):
         return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
@@ -127,18 +124,31 @@ class ActiveParticipant(Participant):
     """A participant under user control (may be the user itself)
     """
 
-    def placeTrade(trade):
-        """places a trade in the market"""
+    def placeBidOrder(self, price, amount):
+        """places an Order in the market for price/amount"""
         raise NotImplementedError()
 
-    def cancelTrade(trade):
+    def placeAskOrder(self, price, amount):
+        """places an Order in the market for price/amount"""
         raise NotImplementedError()
 
-    class TradeAlreadyClosedError(Exception):
-        """Occurs when trying to cancel a already-closed trade"""
+    def cancelOrder(self, order):
+        """Cancel an existing order"""
+        raise NotImplementedError()
+
+    def getOpenOrders(self):
+        """Gets all the open orders"""
+        raise NotImplementedError()
+
+    class ActiveParitipantError(Exception):
+        """Base ActiveParticipant error"""
         pass
 
-    class NotAuthorizedError(Exception):
+    class OrderAlreadyClosedError(ActiveParitipantError):
+        """Occurs when trying to cancel a already-closed Order"""
+        pass
+
+    class NotAuthorizedError(ActiveParitipantError):
         """Occurs when the user is not authorized to do the requested operation
         """
         pass
@@ -170,3 +180,9 @@ class Ticker(object):
         self.market, self.time, self.volume = market, time, volume
         self.high, self.low, self.average, self.last, self.sell, self.buy = \
             high, low, average, last, sell, buy
+
+    def __repr__(self):
+        return \
+            "<Ticker({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})" \
+            .format(self.market, self.time, self.high, self.high, self.last,
+            self.volume, self.average, self.buy, self.sell)
