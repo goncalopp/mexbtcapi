@@ -130,11 +130,11 @@ class MtGoxParticipant(ActiveParticipant):
         if order.is_buy_order():
             logger.debug("placing buy order")
             oid = self.private.bid(order.from_amount.value, order.exchange_rate)
-            return MtGoxOrder(self, oid, now, Order.BID, amount, price, entity=self)
+            return MtGoxOrder(self.market, oid, now, Order.BID, amount, price, entity=self)
         else:
             logger.debug("placing ask order")
             oid = self.private.ask(amount, price)
-            return MtGoxOrder(self, oid, now, Order.ASK, amount, price, entity=self)
+            return MtGoxOrder(self.market, oid, now, Order.ASK, amount, price, entity=self)
 
     def cancelOrder(self, order):
         """Cancel an existing order"""
@@ -164,9 +164,9 @@ class MtGoxParticipant(ActiveParticipant):
             oid = o['oid']
             timestamp = datetime.fromtimestamp(o['date'])
             order_type = Order.BID if o['type'] else Order.ASK
-            amount = Amount(Decimal(o['amount']['value_int']) / self._multiplier(BTC), BTC)
-            price = ExchangeRate(currency, BTC, Decimal(o['price']['value_int']) / self._multiplier(currency))
-            order = MtGoxOrder(self, oid, timestamp, order_type, amount, price, entity=self)
+            amount = Amount(Decimal(o['amount']['value_int']) / self.market._multiplier(BTC), BTC)
+            price = ExchangeRate(currency, BTC, Decimal(o['price']['value_int']) / self.market._multiplier(currency))
+            order = MtGoxOrder(self.market, oid, timestamp, order_type, amount, price, entity=self)
 
             # add additional status from MtGox
             order.status = o['status']
