@@ -28,41 +28,71 @@ class Currency(object):
 
 class ExchangeRate(object):
     """The proportion between two currencies' values"""
+    class BadCurrency( Exception ):
+        def __init__(self, exchange_rate, other_currency):
+            self.er, self.oc= exchange_rate, other_currency
+        def __str__(self):
+            s= "A ExchangeRate of {0} cannot handle {1}"
+            return s.format(self.er, self.oc)
 
     def __init__(self, c1, c2, exchange_rate):
+        '''c2 = exchange_rate * c1'''
         assert all([isinstance(x, Currency) for x in (c1, c2)])
-        # c2 = exchange_rate * c1. If associated with a market, c2 is
-        # the "buy" currency
         assert c1 != c2
         check_number_for_decimal_conversion(exchange_rate)
-        self.c1 = c1
-        self.c2 = c2
-        self.exchange_rate = Decimal(exchange_rate)
+        self._c= (c1,c2)
+        self._er = Decimal(exchange_rate)
 
-    def convert(self, amount):
+    def convert(self, amount, currency=None):
+        '''if currency is not specified, converts amount to the other
+        currency of this ExchangeRate. Otherwise, converts (if needed) 
+        to the specified one'''
+        if currency==amount.currency:
+            return amount
         assert isinstance(amount, Amount)
+        i= self._isFirst( amount.currency)
+        c= self._c[1 if i else 0]
+        if currency and c!=currency:
+            i= not(i)
+        er= self._er if i else 1 /  self._er
+        if currency and c!=currency:
+            raise self.BadCurrency(self, currency)
+        return Amount(amount.value * er, c)
 
-        if self.c1 == amount.currency:
-            return Amount((1 / amount.value) * self.exchange_rate, self.c2)
-        elif self.c2 == amount.currency:
-            return Amount(amount.value * self.exchange_rate, self.c1)
+    def _isFirst(self, currency):
+        '''returns if currency is the first'''
+        if self._c[0] == currency:
+            return True
+        elif self._c[1] == currency:
+            return False
         else:
-            raise Exception("Can't exchange currencies with this ExchangeRate")
+            raise self.BadCurrency(self, currency)
+            
+    def otherCurrency(self, currency):
+        return self._c[ 1 if self._isFirst(currency) else 0 ]
+    
+    def inverse(self):
+        '''returns the reverse exchange rate'''
+        return ExchangeRate(self._c[1], self._c[0], 1/ self._er )
 
     def __cmp__(self, other):
-        if not isinstance(other, ExchangeRate) or other.c1 != self.c1 or \
-           other.c2 != self.c2:
-            raise ValueError("can't compare the two amounts",
-                             str(self), str(other))
-        return cmp(self.exchange_rate, other.exchange_rate)
+        e=ValueError("can't compare the two values:", str(self), 
+                     str(other))
+        if not isinstance(other, ExchangeRate):
+            raise e
+        if self._c[0]!=other._c[0] or self._c[1]!=other._c[1]:
+            raise e
+        return cmp(self._er, other._er)
+        
 
     def __repr__(self):
-        return "<ExchangeRate({:.2f} {}/{})>".format(
-            self.exchange_rate, self.c1.name, self.c2.name)
+        return "<ExchangeRate({:.2f} {}/{})>".format( self._er, 
+                                                      self._c[0].name, 
+                                                      self._c[1].name)
 
     def __str__(self):
-        return "{:.2f} {}/{}".format(
-            self.exchange_rate, self.c1.name, self.c2.name)
+        return "{:.2f} {}/{}".format( self._er, self._c[0].name, 
+                                    self._c[1].name)
 
 
 class Amount(object):
