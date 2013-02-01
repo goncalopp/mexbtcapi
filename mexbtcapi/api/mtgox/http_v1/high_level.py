@@ -41,7 +41,7 @@ class MtGoxMarket(BaseMarket):
     MARKET_NAME = "MtGox"
 
     def __init__(self, currency):
-        BaseMarket.__init__(self, self.MARKET_NAME, currency, BTC)
+        super(MtGoxMarket, self).__init__(self.MARKET_NAME, currency, BTC)
 
         # to convert low level data
         self.multiplier = low_level.multiplier
@@ -121,7 +121,7 @@ class MtGoxMarket(BaseMarket):
 class MtGoxParticipant(ActiveParticipant):
 
     def __init__(self, market, key, secret):
-        ActiveParticipant.__init__(self, market)
+        super(MtGoxParticipant, self).__init__(market)
         self.private = low_level.Private(key, secret)
 
     def placeBidOrder(self, amount, price):
