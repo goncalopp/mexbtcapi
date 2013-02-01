@@ -25,9 +25,8 @@ class MtgoxTicker(concepts.market.Ticker):
 
 class MtGoxOrder(Order):
 
-    def __init__(self, oid, market, timestamp, buy_or_sell, from_amount,
-                 exchange_rate, properties="", entity=None):
-        super(MtGoxOrder, self).__init__(market, timestamp, buy_or_sell, from_amount, exchange_rate, properties, entity)
+    def __init__(self, oid, *args, **kwargs):
+        super(MtGoxOrder, self).__init__(*args, **kwargs)
         self.oid = oid
 
     def __repr__(self):
