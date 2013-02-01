@@ -118,11 +118,10 @@ class MtGoxMarket(BaseMarket):
         return trades
 
 
-class MtGoxParticipant(MtGoxMarket, ActiveParticipant):
+class MtGoxParticipant(ActiveParticipant):
 
-    def __init__(self, currency, key, secret):
-        MtGoxMarket.__init__(self, currency)
-
+    def __init__(self, market, key, secret):
+        ActiveParticipant.__init__(self, market)
         self.private = low_level.Private(key, secret)
 
     def placeBidOrder(self, amount, price):

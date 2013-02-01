@@ -104,7 +104,7 @@ class Market(object):
                     self.currency1, self.currency2)
 
 
-class Participant(Market):
+class Participant(object):
     """Represents a participant in a market
     """
 
