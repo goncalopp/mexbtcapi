@@ -123,6 +123,18 @@ class PassiveParticipant(Participant):
 class ActiveParticipant(Participant):
     """A participant under user control (may be the user itself)
     """
+    class ActiveParitipantError(Exception):
+        """Base ActiveParticipant error"""
+        pass
+
+    class OrderAlreadyClosedError(ActiveParitipantError):
+        """Occurs when trying to cancel a already-closed Order"""
+        pass
+
+    class NotAuthorizedError(ActiveParitipantError):
+        """Occurs when the user is not authorized to do the requested operation
+        """
+        pass
 
     def placeBidOrder(self, price, amount):
         """places an Order in the market for price/amount"""
@@ -139,19 +151,6 @@ class ActiveParticipant(Participant):
     def getOpenOrders(self):
         """Gets all the open orders"""
         raise NotImplementedError()
-
-    class ActiveParitipantError(Exception):
-        """Base ActiveParticipant error"""
-        pass
-
-    class OrderAlreadyClosedError(ActiveParitipantError):
-        """Occurs when trying to cancel a already-closed Order"""
-        pass
-
-    class NotAuthorizedError(ActiveParitipantError):
-        """Occurs when the user is not authorized to do the requested operation
-        """
-        pass
 
 
 class Ticker(object):
