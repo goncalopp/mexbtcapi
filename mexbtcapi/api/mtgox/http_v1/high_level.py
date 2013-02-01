@@ -124,25 +124,17 @@ class MtGoxParticipant(ActiveParticipant):
         super(MtGoxParticipant, self).__init__(market)
         self.private = low_level.Private(key, secret)
 
-    def placeBidOrder(self, amount, price):
+    def placeOrder(self, order):
         """places an Order in the market for price/amount"""
-
-        logger.debug("placing bid order")
-
-        oid = self.private.bid(amount.value, price.exchange_rate)
-
         now = datetime.now()
-        return MtGoxOrder(self, oid, now, Order.BID, amount, price, entity=self)
-
-    def placeAskOrder(self, amount, price):
-        """places an Order in the market for price/amount"""
-
-        logger.debug("placing ask order")
-
-        oid = self.private.ask(amount, price)
-
-        now = datetime.now()
-        return MtGoxOrder(self, oid, now, Order.ASK, amount, price, entity=self)
+        if order.is_buy_order():
+            logger.debug("placing buy order")
+            oid = self.private.bid(order.from_amount.value, order.exchange_rate)
+            return MtGoxOrder(self, oid, now, Order.BID, amount, price, entity=self)
+        else:
+            logger.debug("placing ask order")
+            oid = self.private.ask(amount, price)
+            return MtGoxOrder(self, oid, now, Order.ASK, amount, price, entity=self)
 
     def cancelOrder(self, order):
         """Cancel an existing order"""

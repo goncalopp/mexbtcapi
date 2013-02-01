@@ -136,12 +136,8 @@ class ActiveParticipant(Participant):
         """
         pass
 
-    def placeBidOrder(self, price, amount):
-        """places an Order in the market for price/amount"""
-        raise NotImplementedError()
-
-    def placeAskOrder(self, price, amount):
-        """places an Order in the market for price/amount"""
+    def placeOrder(self, order):
+        """places an Order in the market"""
         raise NotImplementedError()
 
     def cancelOrder(self, order):
