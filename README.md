@@ -1,20 +1,22 @@
 MExBtcAPI
 =========
 
-Welcome to the Multi-Exchange Bitcoin API!
 
-This project aims to:  
+Project Goals
+=============
 
-* provide a set of well developed interfaces useful in representing useful concepts like  
+* provide a set of well developed classes useful in representing concepts like  
     * currency
     * money
     * exchange rate
-    * currency market
+    * currency exchange
+    * exchange order
 * promote their use
 * provide API implementations of various bitcoin exchanges using them
 
 
-This is an example of typical usage:
+Small Demo
+==========
 
     import mexbtcapi
     from mexbtcapi.concepts.currencies import USD
@@ -31,12 +33,20 @@ At the moment, this code returns this output:
     At MtGox I can get 1.25 BTC for my 10.00 USD (that's 12.45 USD/BTC)
 
 
+Development Status
+==================
+
+Pre-alpha.
+Discussion is in course in order to define the API features and interface.
+
+If you're a potential user of this API - your opinion matters, so feel free to join the discussion.
+Developers are welcome too, obviously
+
 Obtaining the latest source
 ===========================
-This project is currently developed at github:
 https://github.com/goncalopp/mexbtcapi
 
 
-Adding suport for a new market
-===========================
+Adding suport for a new exchange
+================================
 Please consult the add_market file
