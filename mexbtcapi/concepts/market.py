@@ -78,7 +78,7 @@ class Market(object):
     """Represents a market - where Trades are made
     """
     class InvalidOrder(Exception):
-        '''raised when there's something wrong with an order, in this 
+        '''raised when there's something wrong with an order, in this
         market's context'''
 
     def __init__(self, market_name, buy_currency, sell_currency):
@@ -102,12 +102,12 @@ class Market(object):
     def _orderSanityCheck(self, order):
         '''checks if an order is adequate in this market'''
         er= order.exchange_rate
-    if order.market and order.market!=self:
-        raise self.InvalidOrder("Order on different market")
-    try:
-        assert er.otherCurrency( self.currency1) == self.currency2
-    except AssertionError, ExchangeRate.BadCurrency:
-        raise self.InvalidOrder("Invalid order exchange rate")
+        if order.market and order.market!=self:
+            raise self.InvalidOrder("Order on different market")
+        try:
+            assert er.otherCurrency( self.currency1) == self.currency2
+        except AssertionError, ExchangeRate.BadCurrency:
+            raise self.InvalidOrder("Invalid order exchange rate")
 
     def __str__(self):
         return self.name
