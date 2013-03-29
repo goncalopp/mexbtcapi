@@ -73,7 +73,7 @@ class ExchangeRate(object):
     
     def inverse(self):
         '''returns the reverse exchange rate'''
-        return ExchangeRate(self._c[1], self._c[0], 1/ self._er )
+        return ExchangeRate(self._c[1], self._c[0], self._er )
 
     def __cmp__(self, other):
         e=ValueError("can't compare the two values:", str(self), 
@@ -87,12 +87,12 @@ class ExchangeRate(object):
 
     def __repr__(self):
         return "<ExchangeRate({:.2f} {}/{})>".format( self._er, 
-                                                      self._c[0].name, 
-                                                      self._c[1].name)
+                                                      self._c[1].name, 
+                                                      self._c[0].name)
 
     def __str__(self):
-        return "{:.2f} {}/{}".format( self._er, self._c[0].name, 
-                                    self._c[1].name)
+        return "{:.2f} {}/{}".format( self._er, self._c[1].name, 
+                                    self._c[0].name)
 
 
 class Amount(object):
