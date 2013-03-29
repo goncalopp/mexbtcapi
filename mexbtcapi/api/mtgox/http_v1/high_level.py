@@ -45,7 +45,7 @@ class MtGoxMarket(BaseMarket):
         # to convert low level data
         self.multiplier = low_level.multiplier
         self.xchg_factory = partial(concepts.currency.ExchangeRate,
-                                    currency, BTC)
+                                    BTC, currency)
 
     def _multiplier(self, currency):
         return self.multiplier[currency.name]
@@ -84,8 +84,7 @@ class MtGoxMarket(BaseMarket):
             timestamp = datetime.fromtimestamp(d['stamp'] / 1000 / 1000)
             amount = Amount(
                 Decimal(d['amount_int']) / self._multiplier(BTC), BTC)
-            price = ExchangeRate(
-                self.currency1, BTC,
+            price = self.xchg_factory(
                 Decimal(d['price_int']) / self._multiplier(self.currency1))
             order = Order(self, timestamp, order_type, amount, price)
             orders.append(order)
@@ -107,7 +106,7 @@ class MtGoxMarket(BaseMarket):
             timestamp = datetime.fromtimestamp(trade['date'])
 
             btc_amount = Amount(amount, BTC)
-            exchange_rate = ExchangeRate(self.currency1, BTC, price)
+            exchange_rate = self.xchg_factory(price)
 
             t = Trade(self, timestamp, btc_amount, exchange_rate)
             t.tid = ['tid']
@@ -164,7 +163,7 @@ class MtGoxParticipant(ActiveParticipant):
             timestamp = datetime.fromtimestamp(o['date'])
             order_type = Order.BID if o['type'] else Order.ASK
             amount = Amount(Decimal(o['amount']['value_int']) / self.market._multiplier(BTC), BTC)
-            price = ExchangeRate(currency, BTC, Decimal(o['price']['value_int']) / self.market._multiplier(currency))
+            price = self.market.self.xchg_factory( Decimal(o['price']['value_int']) / self.market._multiplier(currency))
             order = MtGoxOrder( oid, self.market, timestamp, order_type, amount, price, entity=self)
 
             # add additional status from MtGox
