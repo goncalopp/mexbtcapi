@@ -54,7 +54,7 @@ class ExchangeRate(object):
         c= self._c[1 if i else 0]
         if currency and c!=currency:
             i= not(i)
-        er= self._er if i else 1 /  self._er
+        er= 1 / self._er if i else self._er
         if currency and c!=currency:
             raise self.BadCurrency(self, currency)
         return Amount(amount.value * er, c)
