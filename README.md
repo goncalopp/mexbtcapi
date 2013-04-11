@@ -14,6 +14,9 @@ Project Goals
 * promote their use
 * provide API implementations of various bitcoin exchanges using them
 
+Donations
+=========
+Donations of bitcoin are kindly accepted at **1NBmTawDXqj8mNzGZSTzS1qmeyBhNideTM**
 
 Small Demo
 ==========
@@ -30,7 +33,8 @@ Small Demo
 
 At the moment, this code returns this output:
 
-    At MtGox I can get 1.25 BTC for my 10.00 USD (that's 12.45 USD/BTC)
+    At MtGox I can get 0.08 BTC for my 10.00 USD (that's 124.90 USD/BTC)
+    At Bitcoin-24 I can get 0.15 BTC for my 10.00 USD (that's 65.00 USD/BTC)
 
 
 Development Status
