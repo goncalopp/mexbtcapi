@@ -1,7 +1,7 @@
-from api import mtgox
+from api import mtgox, bitcoin24
 import logging
 
 logging.basicConfig()
 logging.getLogger(__name__)
 
-apis = [mtgox]
+apis = [mtgox,bitcoin24]
