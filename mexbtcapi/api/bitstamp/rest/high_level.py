@@ -24,13 +24,13 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 from decimal import Decimal
-import functools
+from functools import partial
 import datetime
 
 import mexbtcapi
 from mexbtcapi import concepts
 from mexbtcapi.concepts.currencies import BTC, USD
-from mexbtcapi.concepts.currency import Amount
+from mexbtcapi.concepts.currency import Amount, ExchangeRate
 from mexbtcapi.concepts.market import Market as BaseMarket, PassiveParticipant
 
 import urllib
@@ -46,6 +46,9 @@ class BitStampTicker( concepts.market.Ticker):
 class Market(BaseMarket):
     def __init__( self, currency ):
         mexbtcapi.concepts.market.Market.__init__(self, MARKET_NAME, BTC, currency)
+        if currency != USD:
+            raise Exception("Currency not supported on Bitstamp: " + currency)
+        self.xchg_factory = partial(ExchangeRate, BTC, USD)
 
     def json_request(self, url, data=None):
         if data is not None:
@@ -55,32 +58,18 @@ class Market(BaseMarket):
             req = urllib2.Request(url)
         f = urllib2.urlopen(req)
         jdata = json.load(f)
-#        print jdata
         return jdata
 
     def getTicker(self):
-        curname = self.c2.name
-        if "USD" != curname:
-            raise BitstampError("Unknown currency: " + currency)
-#GET https://www.bitstamp.net/api/ticker/
-# Returns JSON dictionary: 
-#last - last BTC price
-#high - last 24 hours price high
-#low - last 24 hours price low
-#volume - last 24 hours volume
-#bid - highest buy order
-#ask - lowest sell order
         url = _URL + "ticker"
         data = self.json_request(url)
-        data['avg'] = 0 # FIXME - not available from API
-        data2 = {}
-        for name in ('high', 'low', 'avg', 'last', 'ask', 'bid'):
-            data2[name] = concepts.currency.ExchangeRate(BTC, USD, data[name])
-        time= datetime.datetime.now()
-        return BitStampTicker( market=self, time=time, high=data2['high'],
-                               low=data2['low'], average=data2['avg'],
-                               last=data2['last'], sell=data2['ask'],
-                               buy=data2['bid'] ) 
+        for x,y in [('bid','buy'),('ask','sell')]:
+            data[y]= data[x]
+        fields= list(BitStampTicker.RATE_FIELDS)
+        fields.remove('average') #not present on Bitstamp API
+        data2 = dict( [ (x, self.xchg_factory(data[x])) for x in fields] )
+        data2['time']= datetime.datetime.now()
+        return BitStampTicker( market=self, **data2 ) 
 
     def getOpenTrades(self):
         url = _URL + "order_book/"
