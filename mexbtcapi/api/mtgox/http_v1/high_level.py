@@ -163,7 +163,7 @@ class MtGoxParticipant(ActiveParticipant):
             timestamp = datetime.fromtimestamp(o['date'])
             order_type = Order.BID if o['type'] else Order.ASK
             amount = Amount(Decimal(o['amount']['value_int']) / self.market._multiplier(BTC), BTC)
-            price = self.market.self.xchg_factory( Decimal(o['price']['value_int']) / self.market._multiplier(currency))
+            price = self.market.xchg_factory( Decimal(o['price']['value_int']) / self.market._multiplier(currency))
             order = MtGoxOrder( oid, self.market, timestamp, order_type, amount, price, entity=self)
 
             # add additional status from MtGox
@@ -177,4 +177,4 @@ class MtGoxParticipant(ActiveParticipant):
         return self.__repr__()
 
     def __repr__(self):
-        return "<MtGoxParticipant({0})>".format(self.currency1)
+        return "<MtGoxParticipant({0})>".format(self.market.currency1)

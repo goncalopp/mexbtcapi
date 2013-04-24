@@ -10,7 +10,7 @@ setup(
     name='mexbtcapi',
     version='0.1',
     description="The Multi-Exchange Bitcoin API",
-    long_description=read('README'),
+    long_description=read('README.md'),
     author="Goncalo Pinheira",
     author_email="goncalopp+pypi@quorumverita.com",
     url='https://github.com/goncalopp/mexbtcapi',
