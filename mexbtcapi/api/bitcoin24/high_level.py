@@ -4,7 +4,7 @@ from functools import partial
 import logging
 
 from mexbtcapi import concepts
-from mexbtcapi.concepts.currencies import BTC
+from mexbtcapi.concepts.currencies import BTC, EUR, USD
 from mexbtcapi.concepts.currency import Amount, Currency, ExchangeRate
 from mexbtcapi.concepts.market import ActiveParticipant, Market as BaseMarket, Order, Trade
 import http as low_level
@@ -38,7 +38,7 @@ class Bitcoin24Market(BaseMarket):
     MARKET_NAME = "Bitcoin-24"
 
     def __init__(self, currency):
-        if not currency.name in ('EUR', 'USD'):
+        if not currency.name in (EUR, USD):
             raise Exception("Currency not supported on bitcoin-24:"+currency.name)
         super(Bitcoin24Market, self).__init__(self.MARKET_NAME, currency, BTC)
         self.xchg_factory = partial(concepts.currency.ExchangeRate, BTC, currency)
