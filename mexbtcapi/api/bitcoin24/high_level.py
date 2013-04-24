@@ -38,7 +38,7 @@ class Bitcoin24Market(BaseMarket):
     MARKET_NAME = "Bitcoin-24"
 
     def __init__(self, currency):
-        if not currency.name in (EUR, USD):
+        if not currency in (EUR, USD):
             raise Exception("Currency not supported on bitcoin-24:"+currency.name)
         super(Bitcoin24Market, self).__init__(self.MARKET_NAME, currency, BTC)
         self.xchg_factory = partial(concepts.currency.ExchangeRate, BTC, currency)
