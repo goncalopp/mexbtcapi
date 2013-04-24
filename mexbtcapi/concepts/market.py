@@ -170,6 +170,8 @@ class Ticker(object):
     # returned results: high, low, average,
     # last, sell, buy, volume
     TIME_PERIOD = timedelta(days=1)
+    RATE_FIELDS= ('high', 'low', 'average', 'last', 'sell', 'buy')
+    OTHER_FIELDS= ('volume',)
 
     def __init__(self, market, time, high=None, low=None, average=None,
                     last=None, sell=None, buy=None, volume=None):
@@ -180,8 +182,8 @@ class Ticker(object):
         high, low, average, last, sell, buy: ExchangeRate.
         """
         assert isinstance(market, Market)
-        assert all([x is None or isinstance(x, ExchangeRate) for x in
-                        (high, low, average, last, sell, buy)])
+        assert all([x is None or isinstance(x, ExchangeRate) 
+            for x in map(locals().__getitem__,self.RATE_FIELDS)])
         assert (volume is None) or (type(volume) == long) or (type(volume) == Decimal)
         assert (buy is None and sell is None) or (buy <= sell)
         assert isinstance(time, datetime)
