@@ -47,7 +47,7 @@ class Market(BaseMarket):
     def __init__( self, currency ):
         mexbtcapi.concepts.market.Market.__init__(self, MARKET_NAME, BTC, currency)
         if currency != USD:
-            raise Exception("Currency not supported on Bitstamp: " + currency)
+            raise Exception("Currency not supported on Bitstamp: " + str(currency))
         self.xchg_factory = partial(ExchangeRate, BTC, USD)
 
     def json_request(self, url, data=None):
