@@ -133,12 +133,12 @@ class ExchangeRate(object):
         
 
     def __repr__(self):
-        return "<ExchangeRate({:.2f} {}/{})>".format( self._er, 
+        return "<ExchangeRate({0:.2f} {1}/{2})>".format( self._er, 
                                                       self._c[1].name, 
                                                       self._c[0].name)
 
     def __str__(self):
-        return "{:.2f} {}/{}".format( self._er, self._c[1].name, 
+        return "{0:.2f} {1}/{2}".format( self._er, self._c[1].name, 
                                     self._c[0].name)
 
     def clone(self):
@@ -194,10 +194,10 @@ class Amount(object):
         return Amount(self.value, self.currency)
 
     def __repr__(self):
-        return "<Amount({:.2f} {})>".format(self.value, self.currency)
+        return "<Amount({0:.2f} {1})>".format(self.value, self.currency)
 
     def __str__(self):
-        return "{:.2f} {}".format(self.value, self.currency)
+        return "{0:.2f} {1}".format(self.value, self.currency)
 
     def __iadd__(self, other):
         if type(other) in (int, float) or isinstance(other, Decimal):
