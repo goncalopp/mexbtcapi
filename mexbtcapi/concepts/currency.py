@@ -24,6 +24,24 @@ class Currency(object):
 
     def __str__(self):
         return self.name
+    
+    def __rmul__(self, other):
+        try:
+            return Amount(other, self)
+        except ValueError:
+            raise TypeError("Can't multiply currency with {0}".format(other))
+    
+    def __div__(self, other):
+        if isinstance(other, Currency):
+            return ExchangeRate(other, self, 1)
+        raise TypeError("Can't divide a Currency by a "+str(type(other)))
+
+    def __rdiv__(self, other):
+        if isinstance(other, Amount):
+            return ExchangeRate(self, other.currency, other.value)
+        raise TypeError("Can't divide a "++str(type(other))+" by a Currency")
+        
+        
 
 
 class ExchangeRate(object):
@@ -58,6 +76,27 @@ class ExchangeRate(object):
         if currency and c!=currency:
             raise self.BadCurrency(self, currency)
         return Amount(amount.value * er, c)
+    
+    def reverse( self ):
+        '''returns a ExchangeRate with swapped currencies order. 
+        The relative value of the currencies remains the same'''
+        return ExchangeRate(self._c[1], self._c[0], 1/self._er )
+
+    def convert_exchangerate( self, exchange_rate):
+        '''Let (CA0,CA1) be the currencies of self, and (CB0,CB1) the 
+        currencies of exchange_rate. If CA0==CB0, this method returns a 
+        new ExchangeRate with currencies CA1, CB1, converting the 
+        internal exchange rate to match.'''
+        a,b= self, exchange_rate
+        common_currency= set(a._c).intersection(b._c)
+        if len(common_currency)!=1:
+            raise Exception("Can't convert: currencies don't match")
+        cc= common_currency.pop()
+        if cc==a._c[1]:
+            a=a.reverse()
+        if cc==b._c[1]:
+            b=b.reverse()
+        return ExchangeRate( a._c[1], b._c[1], b._er/a._er )
 
     def _isFirst(self, currency):
         '''returns if currency is the first'''
@@ -72,8 +111,16 @@ class ExchangeRate(object):
         return self._c[ 1 if self._isFirst(currency) else 0 ]
     
     def inverse(self):
-        '''returns the reverse exchange rate'''
+        '''returns the inverse exchange rate.
+        The relative value of the currencies is swapped'''
         return ExchangeRate(self._c[1], self._c[0], self._er )
+    
+    def per(self, currency):
+        '''gives the ExchangeRate with currency as the denominator.'''
+        if self._c[0]==currency:
+            return self
+        else:
+            return self.reverse()
 
     def __cmp__(self, other):
         e=ValueError("can't compare the two values:", str(self), 
@@ -94,14 +141,48 @@ class ExchangeRate(object):
         return "{:.2f} {}/{}".format( self._er, self._c[1].name, 
                                     self._c[0].name)
 
+    def clone(self):
+        # returns a copy of this ExchangeRate
+        return ExchangeRate(self._c[0], self._c[1], self._er)
+
+    def __iadd__(self, other):
+        if isinstance(other, ExchangeRate):
+            if self._c!=other._c:
+                raise ValueError("Can't sum two ExchangeRate with " + \
+                             "different currencies")
+            self._er += other._er
+        else:
+            raise ValueError("Can't sum ExchangeRate to ", type(other))
+        return self
+
+    def __add__(self, other):
+        a = self.clone()
+        a += other
+        return a
+
+    def __neg__(self):
+        a = self.clone()
+        a._er = -a._er
+        return a
+
+    def __isub__(self, other):
+        self += -other
+        return self
+
+    def __sub__(self, other):
+        a = self.clone() + (-other)
+        return a
+
 
 class Amount(object):
     """An amount of a given currency"""
 
     def __init__(self, value, currency):
         check_number_for_decimal_conversion(value)
-
-        self.value = Decimal(value)
+        try:
+            self.value = Decimal(value)
+        except:
+            raise ValueError("Can't convert {0} to decimal".format(value))
         self.currency = currency
 
     def convert(self, currencyequivalence, to_currency):
@@ -119,7 +200,7 @@ class Amount(object):
         return "{:.2f} {}".format(self.value, self.currency)
 
     def __iadd__(self, other):
-        if type(other) in (int, float):
+        if type(other) in (int, float) or isinstance(other, Decimal):
             self.value += other
         elif isinstance(other, Amount):
             if self.currency != other.currency:
@@ -146,6 +227,18 @@ class Amount(object):
 
     def __sub__(self, other):
         a = self.clone() + (-other)
+        return a
+
+    def __imul__(self, other):
+        if type(other) in (int, float) or isinstance(other, Decimal):
+            self.value *= other
+        else:
+            raise ValueError("Can't multiply Amount to ", type(other))
+        return self
+
+    def __mul__(self, other):
+        a = self.clone()
+        a *= other
         return a
 
     def __cmp__(self, other):
