@@ -1,1 +1,3 @@
 *.pyc
+mexbtcapi.egg-info/
+build/
