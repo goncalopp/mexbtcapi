@@ -15,10 +15,10 @@ class MonitorThread(threading.Thread):
         self.stop_signal = False
 
     def run(self):
-        start_time = datetime.datetime.now()
+        start_time = datetime.utcnow()
         while True:
             self.callback()
-            d = datetime.now() - start_time
+            d = datetime.utcnow() - start_time
             seconds = (d.microseconds + (d.seconds + d.days * 24 * 3600) * \
                        (10 ** 6)) / float(10 ** 6)
             duration = seconds % self.sleep_time  # method execution time
@@ -46,77 +46,30 @@ class Monitor(object):
     Optionally flushes results to disk
     """
 
-    def __init__(self, f, memory=100, sleep_time=10, callback=None,
-                 filename=None, flush_number=10, dont_repeat=True,
-                 to_text=lambda a: str(a), keep_datetime=True):
+    def __init__(self, f, sleep_time=10, callback=None):
         """
         f: the function whose output to monitor
         memory: capacity of Monitor instance, in number of data entries
-        sleep_time: time between calls to f
-        callback: function to call for every call to f
-        filename: the file where to flush data to, if any
-        flush_number: flush every flush_number entries
-        dont_repeat: if the return from the call was the same as last, don't
-        save it to_text: function to use to convert an entry to text for
-        flushing to file
+        sleep_time: time between calls to f, in seconds
+        callback: function to call after every call to f
         """
         self.f = f
-        self.memory = memory
         self.sleep_time = sleep_time
         self.external_callback = callback
-        self.filename = filename
-        self.flush_number = flush_number
-        self.dont_repeat = dont_repeat
-        self.to_text = to_text
-        self.keep_datetime = keep_datetime
+        self.reset_data()
 
+    def reset_data(self):
         self.data = deque()
-        self.flushed_to = 0  # index of last flushed entry +1
-
-    def _remove_entry(self):
-        if self.filename:
-            assert self.flushed_to > 0
-            self.flushed_to -= 1
-        self.data.popleft()
-
-    def flush(self, always=True):
-        if self.filename:
-            not_flushed = len(self.data) - self.flushed_to
-            if not_flushed >= self.flush_number or always:
-                entries = [self.data[i] for i
-                            in xrange(self.flushed_to, len(self.data))]
-                if self.keep_datetime:
-                    result = []
-                    for date, data in entries:
-                        timestr = str(int(time.mktime(date.timetuple())))
-                        valuestr = self.to_text(data)
-                        result.append(timestr + "," + valuestr)
-                    entries = result
-                else:
-                    entries = map(self.to_text, entries)
-
-                f = open(self.filename, "a")
-                f.write("\n".join(entries) + "\n")
-                f.close()
-                self.flushed_to += not_flushed
 
     def add_entry(self, data):
-        different = True if not self.data else (data != self.data[-1]
-                            if not self.keep_datetime else
-                                data != self.data[-1][1])
-        if different:
-            if len(self.data) >= self.memory:
-                self._remove_entry()
-            d = (datetime.datetime.now(), data) if self.keep_datetime else data
-            self.data.append(d)
-            self.flush(always=False)
+        d = (datetime.utcnow(), data)
+        self.data.append(d)
 
     def callback(self):
+        if self.external_callback:
+            self.external_callback(self)
         d = self.f()
-        if d:
-            self.add_entry(d)
-            if self.external_callback:
-                self.external_callback(self)
+        self.add_entry(d)
 
     def start(self):
         self.thread = MonitorThread.new_thread(self.sleep_time, self.callback)
@@ -124,3 +77,21 @@ class Monitor(object):
     def stop(self):
         assert self.thread
         self.thread.stop()
+
+def limit_memory_callback( n_cells, monitor):
+    '''make a partial of this function with the desired n_cells and set
+    it as a callback of Monitor to limit memory capacity'''
+    extra= len(monitor.data)-n_cells
+    if extra>0:
+        monitor.data= monitor.data[extra:]
+
+def each_interval_callback( other_callback, interval_name, monitor ):
+    '''make a partial of this function with a function and a 
+    interval_name (that is a property of datetime) and set
+    it (the partial) as a callback of Monitor to have it called once 
+    each interval_name'''
+    if len(monitor.data)>1:
+        a=getattr(monitor.data[-2][0], interval_name)
+        b=getattr(monitor.data[-1][0], interval_name)
+        if a!=b:
+            other_callback( monitor )

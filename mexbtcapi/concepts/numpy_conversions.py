@@ -44,16 +44,15 @@ def _np_to_decimal(x):
     else:
         return Decimal(long(x)) / DECIMAL_MULTIPLY
 
-def ticker_list_to_numpy( ticker_list ):
+def ticker_list_to_numpy( ticker_list, per_currency ):
     assert all([isinstance(x, Ticker) for x in ticker_list])
-    assert len(ticker_list)>0
     #all tickers have the same market
     assert all([ticker_list[0].market==x.market for x in ticker_list])
-    return np.array( map(_ticker_to_numpy, ticker_list), dtype=zip(FIELD_NAMES, FIELD_TYPES))
+    return np.array( [_ticker_to_numpy(x, per_currency) for x in ticker_list], dtype=zip(FIELD_NAMES, FIELD_TYPES))
     
-def _ticker_to_numpy( ticker ):
+def _ticker_to_numpy( ticker, per_currency ):
     timestamp= time.mktime( ticker.time.timetuple() )
-    rates= (_er_to_np(getattr(ticker, x)) for x in Ticker.RATE_FIELDS)
+    rates= (_er_to_np(getattr(ticker, x), per_currency) for x in Ticker.RATE_FIELDS)
     other= (_decimal_to_np(getattr(ticker, x)) for x in Ticker.OTHER_FIELDS)
     return (timestamp,)+tuple(rates)+tuple(other)
 
