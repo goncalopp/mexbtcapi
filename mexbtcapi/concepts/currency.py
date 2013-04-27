@@ -117,10 +117,11 @@ class ExchangeRate(object):
     
     def per(self, currency):
         '''gives the ExchangeRate with currency as the denominator.'''
-        if self._c[0]==currency:
-            return self
-        else:
-            return self.reverse()
+        return self if self._c[0]==currency else self.reverse()
+    
+    def by(self, currency):
+        '''gives the ExchangeRate with currency as the numerator.'''
+        return self if self._c[1]==currency else self.reverse()
 
     def __cmp__(self, other):
         e=ValueError("can't compare the two values:", str(self), 
