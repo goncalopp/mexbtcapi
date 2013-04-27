@@ -46,7 +46,7 @@ class TickerArchiveMarket(object):
         self.market= market
         self.basepath= os.path.join( archive.basepath, market.full_name )
         if not os.path.isdir(self.basepath):
-            os.mkdir(p)
+            os.mkdir(self.basepath)
     
     def get_data( start_datetime, end_datetime ):
         '''get all the ticker data from start_datetime until end_datetime'''
