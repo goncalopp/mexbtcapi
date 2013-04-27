@@ -46,7 +46,7 @@ class Bitcoin24Market(BaseMarket):
 
     def getTicker(self):
         logger.debug("getting ticker")
-        time = datetime.now()
+        time = datetime.utcnow()
         if self.currency1.name=='EUR':
             data= low_level.get_ticker_EUR()
         elif self.currency1.name=='USD':

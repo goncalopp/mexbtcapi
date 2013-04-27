@@ -68,7 +68,7 @@ class Market(BaseMarket):
         fields= list(BitStampTicker.RATE_FIELDS)
         fields.remove('average') #not present on Bitstamp API
         data2 = dict( [ (x, self.xchg_factory(data[x])) for x in fields] )
-        data2['time']= datetime.datetime.now()
+        data2['time']= datetime.datetime.utcnow()
         return BitStampTicker( market=self, **data2 ) 
 
     def getOpenTrades(self):

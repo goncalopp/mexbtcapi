@@ -53,7 +53,7 @@ class MtGoxMarket(BaseMarket):
     def getTicker(self):
         logger.debug("getting ticker")
 
-        time = datetime.now()
+        time = datetime.utcnow()
         data = low_level.ticker(self.currency1.name)
 
         data2 = [Decimal(data[name]['value_int']) /
@@ -124,7 +124,7 @@ class MtGoxParticipant(ActiveParticipant):
 
     def placeOrder(self, order):
         """places an Order in the market for price/amount"""
-        now = datetime.now()
+        now = datetime.utcnow()
         if order.is_buy_order():
             logger.debug("placing buy order")
             oid = self.private.bid(order.from_amount.value, order.exchange_rate)

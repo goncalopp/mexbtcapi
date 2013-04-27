@@ -64,7 +64,7 @@ class Cache:
 
         timeout = timeout or self.timeout
         k = key_to_str(f, args)
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         ms = datetime.timedelta(microseconds=1000 * timeout)
 
         cached_value = self.backend.get(k)
