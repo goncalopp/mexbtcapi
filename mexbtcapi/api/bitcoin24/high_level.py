@@ -15,23 +15,12 @@ logger = logging.getLogger(__name__)
 
 class Bitcoin24Ticker(concepts.market.Ticker):
     TIME_PERIOD = timedelta(days=1)
-    def __repr__(self):
-        return \
-            "<Bitcoin24Ticker({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})" \
-            .format(self.market, self.time, self.high, self.high, self.last,
-            self.volume, self.average, self.buy, self.sell)
 
 
 class Bitcoin24Order(Order):
     def __init__(self, oid, *args, **kwargs):
         super(Bitcoin24Order, self).__init__(*args, **kwargs)
         self.oid = oid
-
-    def __repr__(self):
-        return \
-            "<Bitcoin24Order({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}>" \
-            .format(self.market, self.timestamp, self.oid, self.buy_or_sell,
-            self.from_amount, self.exchange_rate, self.properties, self.entity)
 
 
 class Bitcoin24Market(BaseMarket):
@@ -75,9 +64,3 @@ class Bitcoin24Participant(ActiveParticipant):
 
     def cancelOrder(self, order):
         raise NotImplementedError
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __repr__(self):
-        return "<Bitcoin24Participant({0})>".format(self.sell_currency)

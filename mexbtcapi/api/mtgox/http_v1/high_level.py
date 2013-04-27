@@ -16,24 +16,10 @@ logger = logging.getLogger(__name__)
 class MtgoxTicker(concepts.market.Ticker):
     TIME_PERIOD = timedelta(days=1)
 
-    def __repr__(self):
-        return \
-            "<MtgoxTicker({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})" \
-            .format(self.market, self.time, self.high, self.high, self.last,
-            self.volume, self.average, self.buy, self.sell)
-
-
 class MtGoxOrder(Order):
-
     def __init__(self, oid, *args, **kwargs):
         super(MtGoxOrder, self).__init__(*args, **kwargs)
         self.oid = oid
-
-    def __repr__(self):
-        return \
-            "<MtGoxOrder({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}>" \
-            .format(self.market, self.timestamp, self.oid, self.buy_or_sell,
-            self.from_amount, self.exchange_rate, self.properties, self.entity)
 
 
 class MtGoxMarket(BaseMarket):
@@ -172,9 +158,3 @@ class MtGoxParticipant(ActiveParticipant):
             orders.append(order)
 
         return orders
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __repr__(self):
-        return "<MtGoxParticipant({0})>".format(self.market.sell_currency)

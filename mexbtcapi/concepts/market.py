@@ -27,8 +27,8 @@ class Trade(object):
         return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
 
     def __repr__(self):
-        return "<Trade({0}, {1}, {2}, {3}>".format(self.market, self.timestamp,
-                    self.from_amount, self.exchange_rate)
+        return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__,
+            self.market, self.timestamp, self.from_amount, self.exchange_rate)
 
 
 class Order(object):
@@ -70,8 +70,8 @@ class Order(object):
         return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
 
     def __repr__(self):
-        return "<Order({0}, {1}, {2}, {3}>".format(self.market, self.timestamp,
-                    self.from_amount, self.exchange_rate)
+        return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__,
+            self.market, self.timestamp, self.from_amount, self.exchange_rate)
 
 
 class Market(object):
@@ -133,8 +133,8 @@ class Market(object):
         return self.name
 
     def __repr__(self):
-        return "<Market({0}, {1}, {2})>".format(self.name,
-                    self.buy_currency, self.sell_currency)
+        return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, 
+                    self.name, self.buy_currency, self.sell_currency)
 
 
 class Participant(object):
@@ -211,6 +211,7 @@ class Ticker(object):
 
     def __repr__(self):
         return \
-            "<Ticker({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})" \
-            .format(self.market, self.time, self.high, self.high, self.last,
-            self.volume, self.average, self.buy, self.sell)
+            "<{0}({1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9})" \
+            .format(self.__class__.__name__, self.market, self.time, 
+            self.high, self.high, self.last, self.volume, self.average, 
+            self.buy, self.sell)
