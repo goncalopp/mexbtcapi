@@ -140,7 +140,6 @@ class Market(object):
 class Participant(object):
     """Represents a participant in a market
     """
-
     def __init__(self, market):
         assert isinstance(market, Market)
         self.market = market
@@ -149,7 +148,6 @@ class Participant(object):
 class PassiveParticipant(Participant):
     """A participant over which the user has no control
     """
-
     pass
 
 
@@ -185,7 +183,6 @@ class ActiveParticipant(Participant):
 class Ticker(object):
     """Ticker datapoint
     """
-
     # time period (in seconds) associated with the
     # returned results: high, low, average,
     # last, sell, buy, volume
@@ -198,7 +195,8 @@ class Ticker(object):
         """
         market: the market this ticker is associated with
         time:   the time at which this ticker was retrieved. This is preferably
-                the server time, if available.
+                the server time, if available; otherwise, the local time.
+                The time should always be in UTC
         high, low, average, last, sell, buy: ExchangeRate.
         """
         assert isinstance(market, Market)
