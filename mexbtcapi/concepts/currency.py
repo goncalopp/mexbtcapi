@@ -46,20 +46,38 @@ class Currency(object):
 
 class ExchangeRate(object):
     """The proportion between two currencies' values"""
-    class BadCurrency( Exception ):
-        def __init__(self, exchange_rate, other_currency):
-            self.er, self.oc= exchange_rate, other_currency
-        def __str__(self):
-            s= "A ExchangeRate of {0} cannot handle {1}"
-            return s.format(self.er, self.oc)
-
     def __init__(self, c1, c2, exchange_rate):
-        '''c2 = exchange_rate * c1'''
+        '''c1 = exchange_rate * c2
+        That is, each CURRENCY1 is worth EXCHANGE_RATE CURRENCY2.
+        Printed result is:  "exchange_rate c2/c1"'''
         assert all([isinstance(x, Currency) for x in (c1, c2)])
         assert c1 != c2
         check_number_for_decimal_conversion(exchange_rate)
         self._c= (c1,c2)
         self._er = Decimal(exchange_rate)
+
+    @property
+    def currency1(self):
+        '''each CURRENCY1 is worth EXCHANGE_RATE CURRENCY2'''
+        return self._c[0]
+
+    @property
+    def currency2(self):
+        '''each CURRENCY1 is worth EXCHANGE_RATE CURRENCY2'''
+        return self._c[0]
+
+    @property
+    def exchange_rate(self):
+        '''each CURRENCY1 is worth EXCHANGE_RATE CURRENCY2'''
+        return self._er
+
+    class BadCurrency( Exception ):
+        '''Raised when ExchangeRate was asked to handle a currency it can't'''
+        def __init__(self, exchange_rate, other_currency):
+            self.er, self.oc= exchange_rate, other_currency
+        def __str__(self):
+            s= "A ExchangeRate of {0} cannot handle {1}"
+            return s.format(self.er, self.oc)
 
     def convert(self, amount, currency=None):
         '''if currency is not specified, converts amount to the other
