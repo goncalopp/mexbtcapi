@@ -72,6 +72,7 @@ class Market(BaseMarket):
         return BitStampTicker( market=self, **data2 ) 
 
     def getOpenTrades(self):
+        raise NotImplementedError #This method must be reviewed
         url = _URL + "order_book/"
         data = self.json_request(url)
 #        print data
