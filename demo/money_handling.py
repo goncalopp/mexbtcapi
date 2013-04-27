@@ -28,4 +28,6 @@ print "If I know that each USD is worth {0}..".format(
 print "Then, each EUR is worth {0}".format(
     eur_er.convert_exchangerate(btc_er).convert(1*EUR))
 
-
+print
+print "If the value of {0} and {1} were the same, the exchange rate would be {2}".format( 
+    money_usd, money_eur, money_usd/money_eur)

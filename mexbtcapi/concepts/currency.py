@@ -249,7 +249,7 @@ class Amount(object):
         return a
 
     def __imul__(self, other):
-        if type(other) in (int, float) or isinstance(other, Decimal):
+        if isinstance(other, (int, float, long, Decimal)):
             self.value *= other
         else:
             raise ValueError("Can't multiply Amount to ", type(other))
@@ -259,9 +259,38 @@ class Amount(object):
         a = self.clone()
         a *= other
         return a
+    
+    def __div__(self, other):
+        '''doubles as ExchangeRate constructor'''
+        if isinstance(other, Currency):
+            other= Amount(1, other)
+        if isinstance(other, Amount):
+            return ExchangeRate(other.currency, self.currency, self.value/other.value)
+        else:
+            a= self.clone()
+            a/=other
+            return a
+    
+    def __idiv__(self, other):
+        if isinstance(other, (int, float, long, Decimal)):
+            self.value/=other
+            return self
+        else:
+            raise ValueError("Can't divide Amount to ", type(other))
 
     def __cmp__(self, other):
         if not isinstance(other, Amount) or other.currency != self.currency:
             raise ValueError("can't compare the two amounts",
                              str(self), str(other))
         return cmp(self.value, other.value)
+    
+    def __rshift__(self, other):
+        '''constructor for Order'''
+        if isinstance(other, Amount):
+            other= ExchangeRate(other.currency, self.currency, self.value/other.value)
+        if not other:
+            other=None
+        if other is None or isinstance(other, ExchangeRate):
+            from market import Order
+            return Order(self, other)
+        raise ValueError("Can't shift {0} by {1}".format(self, other))
