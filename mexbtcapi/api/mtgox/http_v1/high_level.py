@@ -6,7 +6,7 @@ import logging
 from mexbtcapi import concepts
 from mexbtcapi.concepts.currencies import BTC
 from mexbtcapi.concepts.currency import Amount, Currency, ExchangeRate
-from mexbtcapi.concepts.market import ActiveParticipant, Market as BaseMarket, Order, Trade
+from mexbtcapi.concepts.market import ActiveParticipant, Market, MarketOrder, Trade, Depth
 import mtgox as low_level
 
 
@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 class MtgoxTicker(concepts.market.Ticker):
     TIME_PERIOD = timedelta(days=1)
 
-class MtGoxOrder(Order):
+class MtGoxOrder(MarketOrder):
     def __init__(self, oid, *args, **kwargs):
         super(MtGoxOrder, self).__init__(*args, **kwargs)
         self.oid = oid
 
 
-class MtGoxMarket(BaseMarket):
+class MtGoxMarket(Market):
     MARKET_NAME = "MtGox"
 
     def __init__(self, currency):
@@ -55,24 +55,24 @@ class MtGoxMarket(BaseMarket):
 
     def getDepth(self):
         logger.debug("getting depth")
-
         low_level_depth = low_level.depth()
+        sells=self._depthToOrders(low_level_depth['asks'], False)
+        buys= self._depthToOrders(low_level_depth['bids'], True)
+        return Depth(self, buys, sells)
 
-        return {
-            'asks': self._depthToOrders(low_level_depth['asks'], Order.ASK),
-            'bids': self._depthToOrders(low_level_depth['bids'], Order.BID),
-        }
-
-    def _depthToOrders(self, depth, order_type):
+    def _depthToOrders(self, depth, is_buy):
         orders = []
 
         for d in depth:
             timestamp = datetime.fromtimestamp(d['stamp'] / 1000 / 1000)
-            amount = Amount(
-                Decimal(d['amount_int']) / self._multiplier(BTC), BTC)
+            
+            amount = Amount(Decimal(d['amount_int']) / self._multiplier(BTC), BTC)
             price = self.xchg_factory(
                 Decimal(d['price_int']) / self._multiplier(self.sell_currency))
-            order = Order(self, timestamp, order_type, amount, price)
+            if is_buy:
+                order = MtGoxOrder(None, self, timestamp, None, price.convert(amount), price)
+            else:
+                order = MtGoxOrder(None, self, timestamp, None, amount, price)
             orders.append(order)
 
         return orders
@@ -100,6 +100,9 @@ class MtGoxMarket(BaseMarket):
             trades.append(t)
 
         return trades
+    
+    def getParticipant(self, key, secret):
+        return MtGoxParticipant(self, key, secret)
 
 
 class MtGoxParticipant(ActiveParticipant):
@@ -147,10 +150,12 @@ class MtGoxParticipant(ActiveParticipant):
             currency = Currency(o['currency'])
             oid = o['oid']
             timestamp = datetime.fromtimestamp(o['date'])
-            order_type = Order.BID if o['type'] else Order.ASK
+            
             amount = Amount(Decimal(o['amount']['value_int']) / self.market._multiplier(BTC), BTC)
             price = self.market.xchg_factory( Decimal(o['price']['value_int']) / self.market._multiplier(currency))
-            order = MtGoxOrder( oid, self.market, timestamp, order_type, amount, price, entity=self)
+            if o['type']=='bid':
+                amount= price.convert(amount)
+            order = MtGoxOrder( oid, self.market, timestamp, self, amount, price)
 
             # add additional status from MtGox
             order.status = o['status']
