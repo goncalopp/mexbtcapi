@@ -124,6 +124,10 @@ class Market(object):
         """Returns all completed trades"""
         raise NotImplementedError()
 
+    def getParticipant(self, *args, **kwargs):
+        """returns a ActiveParticipant in this market"""
+        raise NotImplementedError
+
     def _orderSanityCheck(self, order):
         '''checks if an order is adequate in this market'''
         er= order.exchange_rate
@@ -220,3 +224,14 @@ class Ticker(object):
             .format(self.__class__.__name__, self.market, self.time, 
             self.high, self.high, self.last, self.volume, self.average, 
             self.buy, self.sell)
+
+class Depth( object ):
+    def __init__(self, market, buy_orders, sell_orders):
+        assert isinstance(market, Market)
+        assert all( (isinstance(x, MarketOrder) for x in buy_orders) )
+        assert all( (isinstance(x, MarketOrder) for x in sell_orders) )
+        assert all( (x.is_buy_order for x in buy_orders) )
+        assert all( (x.is_sell_order for x in sell_orders) )
+        self.market=market
+        self.buy_orders=  buy_orders
+        self.sell_orders= sell_orders
