@@ -18,29 +18,18 @@ Donations
 =========
 Donations of bitcoin are kindly accepted at **1NBmTawDXqj8mNzGZSTzS1qmeyBhNideTM**
 
-Small Demo
+Demo
 ==========
 
-    import mexbtcapi
-    from mexbtcapi.concepts.currencies import USD
-    from mexbtcapi.concepts.currency import Amount
-
-
-    ten_dollars= Amount(10, USD)
-    for api in mexbtcapi.apis:
-        exchange_rate= api.market(USD).getTicker().sell
-        print "At %s I can get %s for my %s (that's %s)"%(api.name, exchange_rate.convert( ten_dollars ), ten_dollars, exchange_rate)
-
-At the moment, this code returns this output:
-
-    At MtGox I can get 0.08 BTC for my 10.00 USD (that's 124.90 USD/BTC)
-    At Bitcoin-24 I can get 0.15 BTC for my 10.00 USD (that's 65.00 USD/BTC)
-
+Check the demo directory for usage examples.
 
 Development Status
 ==================
 
 Pre-alpha.
+
+The Ticker API is stable and working on MtGox, Bitcoin-24 and Bitstamp.
+
 Discussion is in course in order to define the API features and interface.
 
 If you're a potential user of this API - your opinion matters, so feel free to join the discussion.
@@ -53,4 +42,4 @@ https://github.com/goncalopp/mexbtcapi
 
 Adding suport for a new exchange
 ================================
-Please consult the add_market file
+Please consult the doc/add_market file
