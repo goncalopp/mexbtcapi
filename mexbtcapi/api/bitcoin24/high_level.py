@@ -40,16 +40,16 @@ class Bitcoin24Market(BaseMarket):
     def __init__(self, currency):
         if not currency in (EUR, USD):
             raise Exception("Currency not supported on bitcoin-24:"+currency.name)
-        super(Bitcoin24Market, self).__init__(self.MARKET_NAME, currency, BTC)
+        super(Bitcoin24Market, self).__init__(self.MARKET_NAME, BTC, currency )
         self.xchg_factory = partial(concepts.currency.ExchangeRate, BTC, currency)
     
 
     def getTicker(self):
         logger.debug("getting ticker")
         time = datetime.utcnow()
-        if self.currency1.name=='EUR':
+        if self.sell_currency==EUR:
             data= low_level.get_ticker_EUR()
-        elif self.currency1.name=='USD':
+        elif self.sell_currency==USD:
             data= low_level.get_ticker_USD()
         else:
             raise Exception
@@ -80,4 +80,4 @@ class Bitcoin24Participant(ActiveParticipant):
         return self.__repr__()
 
     def __repr__(self):
-        return "<Bitcoin24Participant({0})>".format(self.currency1)
+        return "<Bitcoin24Participant({0})>".format(self.sell_currency)

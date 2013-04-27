@@ -40,7 +40,7 @@ class MtGoxMarket(BaseMarket):
     MARKET_NAME = "MtGox"
 
     def __init__(self, currency):
-        super(MtGoxMarket, self).__init__(self.MARKET_NAME, currency, BTC)
+        super(MtGoxMarket, self).__init__(self.MARKET_NAME, BTC, currency)
 
         # to convert low level data
         self.multiplier = low_level.multiplier
@@ -54,10 +54,10 @@ class MtGoxMarket(BaseMarket):
         logger.debug("getting ticker")
 
         time = datetime.utcnow()
-        data = low_level.ticker(self.currency1.name)
+        data = low_level.ticker(self.sell_currency.name)
 
         data2 = [Decimal(data[name]['value_int']) /
-                 self._multiplier(self.currency1)
+                 self._multiplier(self.sell_currency)
                  for name in ('high', 'low', 'avg', 'last', 'sell', 'buy')]
         high, low, avg, last, sell, buy = map(self.xchg_factory, data2)
 
@@ -85,7 +85,7 @@ class MtGoxMarket(BaseMarket):
             amount = Amount(
                 Decimal(d['amount_int']) / self._multiplier(BTC), BTC)
             price = self.xchg_factory(
-                Decimal(d['price_int']) / self._multiplier(self.currency1))
+                Decimal(d['price_int']) / self._multiplier(self.sell_currency))
             order = Order(self, timestamp, order_type, amount, price)
             orders.append(order)
 
@@ -100,7 +100,7 @@ class MtGoxMarket(BaseMarket):
         trades = []
         for trade in low_level_trades:
             price = Decimal(trade['price_int']) / \
-                self._multiplier(self.currency1)
+                self._multiplier(self.sell_currency)
             amount = Decimal(trade['amount_int']) / \
                 self._multiplier(BTC)
             timestamp = datetime.fromtimestamp(trade['date'])
@@ -177,4 +177,4 @@ class MtGoxParticipant(ActiveParticipant):
         return self.__repr__()
 
     def __repr__(self):
-        return "<MtGoxParticipant({0})>".format(self.market.currency1)
+        return "<MtGoxParticipant({0})>".format(self.market.sell_currency)

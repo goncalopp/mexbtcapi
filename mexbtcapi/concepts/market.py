@@ -75,17 +75,37 @@ class Order(object):
 
 
 class Market(object):
-    """Represents a market - where Trades are made
-    """
+    """Represents a market - where Trades are made"""
     class InvalidOrder(Exception):
         '''raised when there's something wrong with an order, in this
         market's context'''
 
     def __init__(self, market_name, buy_currency, sell_currency):
-        """Currency1 is the "buy" currency"""
-        self.name = market_name
-        self.currency1 = buy_currency
-        self.currency2 = sell_currency
+        self._name = market_name
+        self._currency1 = buy_currency
+        self._currency2 = sell_currency
+    
+    @property
+    def buy_currency(self):
+        '''The currency that a participant on this market buys. 
+        Should be the less common currency'''
+        return self._currency1
+    
+    @property
+    def sell_currency(self):
+        '''The currency that a participant on this market sells. 
+        Should be the more common currency'''
+        return self._currency2
+    
+    @property
+    def name(self):
+        '''The name of this market. Doesn't include the currencies'''
+        return self._name
+    
+    @property
+    def full_name(self):
+        '''The full name of this market. Includes the currencies'''
+        return self.name+"_"+str(self.buy_currency)+"_"+str(self.sell_currency)
 
     def getTicker(self):
         """Returns the most recent ticker"""
@@ -105,7 +125,7 @@ class Market(object):
         if order.market and order.market!=self:
             raise self.InvalidOrder("Order on different market")
         try:
-            assert er.otherCurrency( self.currency1) == self.currency2
+            assert er.otherCurrency( self._currency1 ) == self._currency2
         except AssertionError, ExchangeRate.BadCurrency:
             raise self.InvalidOrder("Invalid order exchange rate")
 
@@ -114,7 +134,7 @@ class Market(object):
 
     def __repr__(self):
         return "<Market({0}, {1}, {2})>".format(self.name,
-                    self.currency1, self.currency2)
+                    self.buy_currency, self.sell_currency)
 
 
 class Participant(object):
