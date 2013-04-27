@@ -25,7 +25,7 @@
 
 from decimal import Decimal
 from functools import partial
-import datetime
+from datetime import datetime,timedelta
 
 import mexbtcapi
 from mexbtcapi import concepts
@@ -41,7 +41,7 @@ MARKET_NAME= "Bitstamp"
 _URL = "https://www.bitstamp.net/api/"
 
 class BitStampTicker( concepts.market.Ticker):
-    TIME_PERIOD= 24*60*60
+    TIME_PERIOD= timedelta(days=1)
 
 class Market(BaseMarket):
     def __init__( self, currency ):
@@ -68,7 +68,7 @@ class Market(BaseMarket):
         fields= list(BitStampTicker.RATE_FIELDS)
         fields.remove('average') #not present on Bitstamp API
         data2 = dict( [ (x, self.xchg_factory(data[x])) for x in fields] )
-        data2['time']= datetime.datetime.utcnow()
+        data2['time']= datetime.utcnow()
         return BitStampTicker( market=self, **data2 ) 
 
     def getOpenTrades(self):
