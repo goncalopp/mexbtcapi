@@ -154,15 +154,15 @@ class PassiveParticipant(Participant):
 class ActiveParticipant(Participant):
     """A participant under user control (may be the user itself)
     """
-    class ActiveParitipantError(Exception):
+    class ActiveParticipantError(Exception):
         """Base ActiveParticipant error"""
         pass
 
-    class OrderAlreadyClosedError(ActiveParitipantError):
+    class OrderAlreadyClosedError(ActiveParticipantError):
         """Occurs when trying to cancel a already-closed Order"""
         pass
 
-    class NotAuthorizedError(ActiveParitipantError):
+    class NotAuthorizedError(ActiveParticipantError):
         """Occurs when the user is not authorized to do the requested operation
         """
         pass
