@@ -34,45 +34,50 @@ class Trade(object):
 class Order(object):
     """Represents an order to buy or sell a number of from_amount for
     exchange_rate.
-
-    For now, more specific properties can be set through the properties
-    parameter of the constructor.
     """
-
-    BID = 'BID'
-    ASK = 'ASK'
-
-    def __init__(self, market, timestamp, buy_or_sell, from_amount,
-                 exchange_rate, properties="", entity=None):
-        assert isinstance(market, Market)  # must not be null
-        assert isinstance(timestamp, datetime)  # must not be null
-        assert buy_or_sell in [self.BID, self.ASK]
+    TYPES=('market', 'limit')
+    def __init__(self, from_amount, exchange_rate=None, otype=None, entity=None):
         assert isinstance(from_amount, Amount)
-        assert isinstance(exchange_rate, ExchangeRate)
-        assert isinstance(properties, str)
-        assert entity is None or isinstance(entity, Participant)
+        assert (not exchange_rate) or isinstance(exchange_rate, ExchangeRate)
+        assert (not otype) or (otype in self.TYPES)
 
-        self.market = market
-        self.timestamp = timestamp
-        self.buy_or_sell = buy_or_sell
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
-        self.properties = properties
         self.entity = entity
-
-    def is_buy_order(self):
-        return self.buy_or_sell == self.BID
-
-    def is_sell_order(self):
-        return self.buy_or_sell != self.BID
+        self.otype= otype if otype else 'market' if not exchange_rate else 'limit'
+    
+    @property
+    def to_amount(self):
+        if self.exchange_rate:
+            return self.exchange_rate.convert( self.from_amount )
+        else:
+            return "?"
 
     def __str__(self):
-        return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
+        return "{0} >> {1}".format(self.from_amount, self.to_amount)
 
     def __repr__(self):
         return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__,
             self.market, self.timestamp, self.from_amount, self.exchange_rate)
 
+class MarketOrder( Order ):
+    '''A concrete order on a certain market'''
+    def __init__(self, market, timestamp, entity, *args, **kwargs):
+        assert isinstance(market, Market)       # must not be null
+        assert isinstance(timestamp, datetime)  # must not be null
+        assert entity is None or isinstance(entity, Participant)
+        super(MarketOrder,self).__init__(*args, **kwargs)
+        self.market = market
+        self.timestamp = timestamp
+    
+    @property
+    def is_buy_order(self):
+        return self.from_amount.currency == self.market.sell_currency
+
+    @property
+    def is_sell_order(self):
+        return self.from_amount.currency == self.market.buy_currency
+        
 
 class Market(object):
     """Represents a market - where Trades are made"""
@@ -202,7 +207,7 @@ class Ticker(object):
         assert isinstance(market, Market)
         assert all([x is None or isinstance(x, ExchangeRate) 
             for x in map(locals().__getitem__,self.RATE_FIELDS)])
-        assert (volume is None) or (type(volume) == long) or (type(volume) == Decimal)
+        assert (volume is None) or isinstance(volume, (long,Decimal))
         assert (buy is None and sell is None) or (buy <= sell)
         assert isinstance(time, datetime)
         self.market, self.time, self.volume = market, time, volume
