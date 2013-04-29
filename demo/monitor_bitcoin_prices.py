@@ -48,13 +48,13 @@ class TickerArchiveMarket(object):
         if not os.path.isdir(self.basepath):
             os.mkdir(self.basepath)
     
-    def get_data( start_datetime, end_datetime ):
+    def get_data( self, start_datetime, end_datetime ):
         '''get all the ticker data from start_datetime until end_datetime'''
         assert end_datetime > start_datetime
-        intervals= self._get_interval_files( tstart_datetime, end_datetime )
+        intervals= self._get_interval_files( start_datetime, end_datetime )
         data=[]
         for i, interval in enumerate(intervals):
-            i_data= self._getFile(i[2]).get_data()
+            i_data= self._getFile(interval[2]).get_data()
             if i!=0:
                 start=0
             else:
@@ -67,7 +67,15 @@ class TickerArchiveMarket(object):
                 end=bisect.bisect_left(times, end_datetime)
             data.extend( i_data[start:end] )
         return data
-    
+
+    def _all_files( self ):
+        return sorted(os.listdir(self.basepath))
+        
+    def get_latest( self ):
+        '''gets the latest ticker available'''
+        f= self._getFile( int(self._all_files()[-1]) )
+        return f.get_data()[-1]
+        
     def add_data( self, ticker_list ):
         '''add ticker data to disk'''
         ticker_list= sorted(ticker_list, key=lambda x:x.time)
@@ -99,6 +107,7 @@ class TickerArchiveMarket(object):
         return datetime.fromtimestamp(self.BASE_TIME+(filenumber*self.INTERVAL) )
     
     def _getFile(self, filenumber):
+        assert isinstance(filenumber, (int, long))
         p= os.path.join(self.basepath, str(filenumber))
         return TickerArchiveMarketFile( p, self, filenumber)
 
