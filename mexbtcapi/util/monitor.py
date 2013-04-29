@@ -3,6 +3,9 @@ import threading
 import time
 from collections import deque
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class MonitorThread(threading.Thread):
     """executes a function f with sleep_time intervals in between
@@ -59,28 +62,34 @@ class Monitor(object):
         self.reset_data()
 
     def reset_data(self):
+        logger.debug("data reset")
         self.data = deque()
 
     def add_entry(self, data):
+        logger.debug("entry added")
         d = (datetime.utcnow(), data)
         self.data.append(d)
 
     def callback(self):
+        logger.debug("callback")
         if self.external_callback:
             self.external_callback(self)
         d = self.f()
         self.add_entry(d)
 
     def start(self):
+        logger.debug("starting")
         self.thread = MonitorThread.new_thread(self.sleep_time, self.callback)
 
     def stop(self):
+        logger.debug("stopping")
         assert self.thread
         self.thread.stop()
 
 def limit_memory_callback( n_cells, monitor):
     '''make a partial of this function with the desired n_cells and set
     it as a callback of Monitor to limit memory capacity'''
+    logger.debug("limit_memory_callback called")
     extra= len(monitor.data)-n_cells
     if extra>0:
         monitor.data= monitor.data[extra:]
@@ -90,6 +99,7 @@ def each_interval_callback( other_callback, interval_name, monitor ):
     interval_name (that is a property of datetime) and set
     it (the partial) as a callback of Monitor to have it called once 
     each interval_name'''
+    logger.debug("each_interval_callback called")
     if len(monitor.data)>1:
         a=getattr(monitor.data[-2][0], interval_name)
         b=getattr(monitor.data[-1][0], interval_name)
