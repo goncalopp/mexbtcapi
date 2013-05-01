@@ -8,6 +8,7 @@ from functools import partial
 from datetime import datetime
 import numpy as np
 import bisect
+from multiprocessing.pool import ThreadPool
 
 import mexbtcapi
 from mexbtcapi.util.monitor import Monitor, each_interval_callback
@@ -174,14 +175,19 @@ def save_to_file(monitor):
 
 if __name__=="__main__":
     markets= [api.market(USD) for api in mexbtcapi.apis]
-
+    threads= ThreadPool( len(markets) )
+    def marketticker(market):
+        try:
+            return market.getTicker()
+        except:
+            print "failed to get data for "+market.name
+            return None
     def prices():
+        prices= threads.map( marketticker, markets )
         p={}
-        for m in markets:
-            try:
-                p[m]= m.getTicker()
-            except:
-                print "failed to get data for "+m.name
+        for i,m in enumerate(markets):
+            if prices[i]:
+                p[m]=prices[i]
         return p
 
     archive= TickerArchive("archive")
