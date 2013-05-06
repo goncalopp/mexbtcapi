@@ -33,7 +33,7 @@ import urllib2
 
 from decimal import Decimal
 
-_URL = "https://mtgox.com/api/1/"
+_URL = "https://data.mtgox.com/api/1/"
 CURRENCY = "USD"
 RETURN_TYPE = int
 
@@ -111,8 +111,11 @@ def _generic(name, data=None):
     return _json_request(url, data)
 
 
-def _specific(name, currency, data=None):
-    url = _URL + 'BTC' + currency + '/public/' + name
+def _specific(name, currency, data=None, url_params=None):
+    url = _URL + 'BTC' + currency + '/' + name
+    if url_params is not None:
+        url += '?' + urllib.urlencode(url_params)
+    print url
     return _json_request(url, data)
 
 
@@ -154,9 +157,12 @@ def ticker(currency=CURRENCY):
     return _specific('ticker', currency)
 
 
-def trades(currency=CURRENCY):
+def trades(currency=CURRENCY, since=None):
     """Return trades for a given currency."""
-    return _specific('trades', currency)
+    url_params = None
+    if since is not None:
+        url_params = dict(since=since)
+    return _specific('trades', currency, url_params=url_params)
 
 
 def cancelled_trades(currency=CURRENCY):
@@ -175,8 +181,10 @@ class Private:
         url = _URL + 'generic/private/' + name
         return self._json_request(url, data)
 
-    def _specific(self, name, currency, data=None):
+    def _specific(self, name, currency, data=None, url_params=None):
         url = _URL + 'BTC' + currency + '/private/' + name
+        if url_params is not None:
+            url += '?' + urllib.urlencode(url_params)
         return self._json_request(url, data)
 
     def _get_signature(self, data):
