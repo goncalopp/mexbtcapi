@@ -77,11 +77,7 @@ class MtGoxMarket(Market):
 
         return orders
 
-    def getTrades(self):
-        logger.debug("getting trades")
-
-        low_level_trades = low_level.trades()
-
+    def _parseTrades(self, low_level_trades):
         # convert tradres to array of Trades
         trades = []
         for trade in low_level_trades:
@@ -95,11 +91,22 @@ class MtGoxMarket(Market):
             exchange_rate = self.xchg_factory(price)
 
             t = Trade(self, timestamp, btc_amount, exchange_rate)
-            t.tid = ['tid']
+            t.tid = trade['tid']
 
             trades.append(t)
 
         return trades
+
+    def getTrades(self):
+        logger.debug("getting trades")
+        low_level_trades = low_level.trades(self.sell_currency.name)
+        return self._parseTrades(low_level_trades)
+
+    def getTradesSince(self, trade):
+        logger.debug("getting trades since %s" % trade)
+        assert getattr(trade, 'tid', None) is not None, 'Trade object doesn\'t have transaction ID' 
+        low_level_trades = low_level.trades(self.sell_currency.name, trade.tid)
+        return self._parseTrades(low_level_trades)
     
     def getParticipant(self, key, secret):
         return MtGoxParticipant(self, key, secret)
