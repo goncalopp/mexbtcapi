@@ -33,7 +33,7 @@ import urllib2
 
 from decimal import Decimal
 
-_URL = "https://mtgox.com/api/1/"
+_URL = "https://data.mtgox.com/api/1/"
 CURRENCY = "USD"
 RETURN_TYPE = int
 
