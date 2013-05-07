@@ -101,6 +101,12 @@ class MtGoxMarket(Market):
         logger.debug("getting trades")
         low_level_trades = low_level.trades(self.sell_currency.name)
         return self._parseTrades(low_level_trades)
+
+    def getTradesSince(self, trade):
+        logger.debug("getting trades since %s" % trade)
+        assert getattr(trade, 'tid', None) is not None, 'Trade object doesn\'t have transaction ID' 
+        low_level_trades = low_level.trades(self.sell_currency.name, trade.tid)
+        return self._parseTrades(low_level_trades)
     
     def getParticipant(self, key, secret):
         return MtGoxParticipant(self, key, secret)

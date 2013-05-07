@@ -124,6 +124,10 @@ class Market(object):
         """Returns all completed trades"""
         raise NotImplementedError()
 
+    def getTradesSince(self, trade):
+        """Returns all completed trades since a specified trade"""
+        raise NotImplementedError()
+
     def getParticipant(self, *args, **kwargs):
         """returns a ActiveParticipant in this market"""
         raise NotImplementedError
