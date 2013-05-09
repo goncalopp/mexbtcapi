@@ -69,6 +69,26 @@ class TickerArchiveMarket(object):
         '''gets the latest ticker available'''
         f= self._getFile( int(self._all_files()[-1]) )
         return f.get_data()[-1]
+    
+    def get_nearest( self, date, fail_interval=None):
+        file_n= self._datetime_to_filenumber(date)
+        files= map(int,self._all_files())
+        file_i= bisect.bisect_left(files, file_n)
+        if file_i==len(files):
+            file_i-=1
+        file_n= files[file_i]
+        f= self._getFile( file_n )
+        data= f.get_data()
+        if len(data)==0:
+            raise Exception("No data")
+        times= [ticker.time for ticker in data]
+        i=bisect.bisect_left(times, date)
+        if i==len(data):
+            i-=1
+        d= data[i]
+        if fail_interval and abs(d.time-date)>fail_interval:
+            raise Exception("interval is greater than fail_interval")
+        return d
         
     def add_data( self, ticker_list ):
         '''add ticker data to disk'''
