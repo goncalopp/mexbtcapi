@@ -64,7 +64,7 @@ class ExchangeRate(object):
     @property
     def currency2(self):
         '''each CURRENCY1 is worth EXCHANGE_RATE CURRENCY2'''
-        return self._c[0]
+        return self._c[1]
 
     @property
     def exchange_rate(self):
