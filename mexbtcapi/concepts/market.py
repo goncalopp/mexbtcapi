@@ -138,8 +138,8 @@ class Market(object):
         if order.market and order.market!=self:
             raise self.InvalidOrder("Order on different market")
         try:
-            assert er.otherCurrency( self._currency1 ) == self._currency2
-        except AssertionError, ExchangeRate.BadCurrency:
+            assert er.other_currency( self._currency1 ) == self._currency2
+        except AssertionError, ExchangeRate.WrongCurrency:
             raise self.InvalidOrder("Invalid order exchange rate")
 
     def __str__(self):
