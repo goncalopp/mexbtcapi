@@ -1,155 +1,143 @@
-from currency import ExchangeRate, Amount
 from datetime import datetime, timedelta
 from decimal import Decimal
+from abc import ABCMeta, abstractmethod
+import six
+
+from mexbtcapi.concepts.currency import ExchangeRate, Amount
 
 
-class Trade(object):
-    """Represents an exchange of two currency amounts.
-    May include the entities between which the trade is made
+class Order(object):
+    """Represents an order to sell a number of from_amount for exchange_rate.
     """
-
-    def __init__(self, market, timestamp, from_amount, exchange_rate):
-        assert isinstance(market, Market)  # must not be null
-        assert isinstance(timestamp, datetime)  # must not be null
+    TYPES = ('market', 'limit')
+    def __init__(self, from_amount, exchange_rate=None, otype=None, market=None, entity=None, timestamp=None):
         assert isinstance(from_amount, Amount)
-        assert isinstance(exchange_rate, ExchangeRate)
+        assert exchange_rate is None or isinstance(exchange_rate, ExchangeRate)
+        assert otype is None or (otype in self.TYPES)
+        assert market is None or isinstance(market, Market)
+        assert entity is None or isinstance(entity, Participant)
+        assert timestamp is None or isinstance(timestamp, datetime)
 
-        self.market = market
-        self.timestamp = timestamp
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
+        self.entity = entity
+        self.otype = otype if otype else 'market' if not exchange_rate else 'limit'
+        self.market = market
+        self.timestamp = timestamp
+
+        if market:
+            market._order_sanity_check(self)
 
     @property
     def to_amount(self):
         return self.exchange_rate.convert(self.from_amount)
 
-    def __str__(self):
-        return "{0} -> {1}".format(self.from_amount, self.exchange_rate)
-
-    def __repr__(self):
-        return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__,
-            self.market, self.timestamp, self.from_amount, self.exchange_rate)
-
-
-class Order(object):
-    """Represents an order to buy or sell a number of from_amount for
-    exchange_rate.
-    """
-    TYPES=('market', 'limit')
-    def __init__(self, from_amount, exchange_rate=None, otype=None, entity=None):
-        assert isinstance(from_amount, Amount)
-        assert (not exchange_rate) or isinstance(exchange_rate, ExchangeRate)
-        assert (not otype) or (otype in self.TYPES)
-
-        self.from_amount = from_amount
-        self.exchange_rate = exchange_rate
-        self.entity = entity
-        self.otype= otype if otype else 'market' if not exchange_rate else 'limit'
-    
     @property
-    def to_amount(self):
-        if self.exchange_rate:
-            return self.exchange_rate.convert( self.from_amount )
-        else:
-            return "?"
+    def is_bid(self):
+        '''returns True iff this order is buying the market's base currency
+        (and selling the counter currency)'''
+        return self.from_amount.currency == self.market.counter_currency
+
+    @property
+    def is_ask(self):
+        '''returns True iff this order is selling the market's base currency
+        (and buying the counter currency)'''
+        return self.from_amount.currency == self.market.base_currency
 
     def __str__(self):
-        return "{0} >> {1}".format(self.from_amount, self.to_amount)
+        try:
+            to_amount = self.to_amount
+        except AttributeError:
+            to_amount = "?"
+        return "{0} >> {1}".format(self.from_amount, to_amount)
 
     def __repr__(self):
-        return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__,
-            self.market, self.timestamp, self.from_amount, self.exchange_rate)
+        return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__, self.market, self.timestamp, self.from_amount, self.exchange_rate)
 
-class MarketOrder( Order ):
-    '''A concrete order on a certain market'''
-    def __init__(self, market, timestamp, entity, *args, **kwargs):
-        assert isinstance(market, Market)       # must not be null
-        assert isinstance(timestamp, datetime)  # must not be null
-        assert entity is None or isinstance(entity, Participant)
-        super(MarketOrder,self).__init__(*args, **kwargs)
-        self.market = market
-        self.timestamp = timestamp
-    
-    @property
-    def is_buy_order(self):
-        return self.from_amount.currency == self.market.sell_currency
-
-    @property
-    def is_sell_order(self):
-        return self.from_amount.currency == self.market.buy_currency
-        
-
+@six.add_metaclass(ABCMeta)
 class Market(object):
-    """Represents a market - where Trades are made"""
+    """Represents a market.
+    On a market, exactly two currencies are exchanged.
+    The two currencies are known as base and counter.
+    The base currency is the one around whose unit the prices are quoted.
+    The counter currency is the one that varies on price quotes.
+
+    Example: let's say a market quotes the current price as being 500 USD/BTC.
+    BTC would be the base currency, and USD the counter currency"""
     class InvalidOrder(Exception):
         '''raised when there's something wrong with an order, in this
         market's context'''
 
-    def __init__(self, market_name, buy_currency, sell_currency):
+    def __init__(self, market_name, base_currency, counter_currency):
         self._name = market_name
-        self._currency1 = buy_currency
-        self._currency2 = sell_currency
-    
-    @property
-    def buy_currency(self):
-        '''The currency that a participant on this market buys. 
-        Should be the less common currency'''
-        return self._currency1
-    
-    @property
-    def sell_currency(self):
-        '''The currency that a participant on this market sells. 
-        Should be the more common currency'''
-        return self._currency2
-    
+        self.base_currency = base_currency
+        self.counter_currency = counter_currency
+
     @property
     def name(self):
         '''The name of this market. Doesn't include the currencies'''
         return self._name
-    
+
+    @property
+    def currencies(self):
+        return (self.base_currency, self.counter_currency)
+
     @property
     def full_name(self):
         '''The full name of this market. Includes the currencies'''
-        return self.name+"_"+str(self.buy_currency)+"_"+str(self.sell_currency)
+        full_name = "{_name} {base_currency}/{counter_currency}".format(**vars(self))
+        return full_name
 
-    def getTicker(self):
+    @abstractmethod
+    def get_ticker(self):
         """Returns the most recent ticker"""
         raise NotImplementedError()
 
-    def getDepth(self):
-        """Returns the depth book"""
+    @abstractmethod
+    def get_orderbook(self):
+        """Returns the order book"""
         raise NotImplementedError()
 
-    def getTrades(self):
-        """Returns all completed trades"""
-        raise NotImplementedError()
-
-    def getTradesSince(self, trade):
-        """Returns all completed trades since a specified trade"""
-        raise NotImplementedError()
-
-    def getParticipant(self, *args, **kwargs):
+    @abstractmethod
+    def authenticate(self, *args, **kwargs):
         """returns a ActiveParticipant in this market"""
         raise NotImplementedError
 
-    def _orderSanityCheck(self, order):
+    def _order_sanity_check(self, order):
         '''checks if an order is adequate in this market'''
-        er= order.exchange_rate
-        if order.market and order.market!=self:
+        er = order.exchange_rate
+        if order.market and order.market != self:
             raise self.InvalidOrder("Order on different market")
         try:
-            assert er.other_currency( self._currency1 ) == self._currency2
-        except AssertionError, ExchangeRate.WrongCurrency:
+            assert set(er.currencies) == set(self.currencies)
+        except AssertionError:
             raise self.InvalidOrder("Invalid order exchange rate")
 
     def __str__(self):
-        return self.name
+        return self.full_name
 
     def __repr__(self):
-        return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, 
-                    self.name, self.buy_currency, self.sell_currency)
+        return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, self.name, self.base_currency, self.counter_currency)
+
+class MarketList(list):
+    '''A searchable list of markets'''
+    def __init__(self, list_of_markets):
+        assert all(isinstance(m, Market) for m in list_of_markets)
+        list.__init__(self, list_of_markets)
+
+    def find(self, currency1=None, currency2=None, exchange_name=None):
+        exchange_name_lower = exchange_name.lower() if exchange_name else None
+        matches = [m for m in self if
+                   (currency1 is None or currency1 in m.currencies) and
+                   (currency2 is None or currency2 in m.currencies) and
+                   (exchange_name_lower is None or exchange_name_lower in m.name.lower())]
+        return matches
+
+    def __repr__(self):
+        return "<{}({})>".format(self.__class__.__name__, list.__repr__(self))
 
 
+@six.add_metaclass(ABCMeta)
 class Participant(object):
     """Represents a participant in a market
     """
@@ -164,6 +152,7 @@ class PassiveParticipant(Participant):
     pass
 
 
+@six.add_metaclass(ABCMeta)
 class ActiveParticipant(Participant):
     """A participant under user control (may be the user itself)
     """
@@ -180,62 +169,59 @@ class ActiveParticipant(Participant):
         """
         pass
 
+    @abstractmethod
     def placeOrder(self, order):
         """places an Order in the market"""
-        raise NotImplementedError()
+        pass
 
+    @abstractmethod
     def cancelOrder(self, order):
         """Cancel an existing order"""
-        raise NotImplementedError()
+        pass
 
+    @abstractmethod
     def getOpenOrders(self):
-        """Gets all the open orders"""
-        raise NotImplementedError()
+        """Gets all the open orders for this participant"""
+        pass
 
 
 class Ticker(object):
     """Ticker datapoint
     """
-    # time period (in seconds) associated with the
-    # returned results: high, low, average,
-    # last, sell, buy, volume
+    # time period (in seconds) associated with aggregated fields (high, low, volume, ...)
     TIME_PERIOD = timedelta(days=1)
-    RATE_FIELDS= ('high', 'low', 'average', 'last', 'sell', 'buy')
-    OTHER_FIELDS= ('volume',)
+    RATE_FIELDS = ('bid', 'ask')
+    NUMBER_FIELDS = ()
 
-    def __init__(self, market, time, high=None, low=None, average=None,
-                    last=None, sell=None, buy=None, volume=None):
+    def __init__(self, market, time, **kwargs):
         """
         market: the market this ticker is associated with
         time:   the time at which this ticker was retrieved. This is preferably
-                the server time, if available; otherwise, the local time.
+                the server time, if  available; otherwise, the local time.
                 The time should always be in UTC
-        high, low, average, last, sell, buy: ExchangeRate.
+        kwargs: must contain all the fields defined by RATE_FIELDS and NUMBER_FIELDS
         """
         assert isinstance(market, Market)
-        assert all([x is None or isinstance(x, ExchangeRate) 
-            for x in map(locals().__getitem__,self.RATE_FIELDS)])
-        assert (volume is None) or isinstance(volume, (long,Decimal))
-        assert (buy is None and sell is None) or (buy <= sell)
         assert isinstance(time, datetime)
-        self.market, self.time, self.volume = market, time, volume
-        self.high, self.low, self.average, self.last, self.sell, self.buy = \
-            high, low, average, last, sell, buy
+        assert all(isinstance(kwargs[k], ExchangeRate) for k in self.RATE_FIELDS)
+        assert all(isinstance(kwargs[k], (int, long, float, Decimal)) for k in self.NUMBER_FIELDS)
+        different_fields = set(self.RATE_FIELDS + self.NUMBER_FIELDS) ^ set(kwargs.keys())
+        if different_fields:
+            raise Exception("Missing/extra fields: {}".format(different_fields))
+        self.market, self.time = market, time
+        vars(self).update(kwargs)
+        assert self.bid < self.ask
 
     def __repr__(self):
-        return \
-            "<{0}({1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9})" \
-            .format(self.__class__.__name__, self.market, self.time, 
-            self.high, self.high, self.last, self.volume, self.average, 
-            self.buy, self.sell)
+        return "<{cname}({time}, {dict}>".format(cname=self.__class__.__name__, time=self.time, dict=vars(self))
 
-class Depth( object ):
-    def __init__(self, market, buy_orders, sell_orders):
+class OrderBook(object):
+    def __init__(self, market, bid_orders, ask_orders):
         assert isinstance(market, Market)
-        assert all( (isinstance(x, MarketOrder) for x in buy_orders) )
-        assert all( (isinstance(x, MarketOrder) for x in sell_orders) )
-        assert all( (x.is_buy_order for x in buy_orders) )
-        assert all( (x.is_sell_order for x in sell_orders) )
-        self.market=market
-        self.buy_orders=  buy_orders
-        self.sell_orders= sell_orders
+        assert all(isinstance(x, Order) for x in bid_orders)
+        assert all(isinstance(x, Order) for x in ask_orders)
+        assert all(x.is_bid for x in bid_orders)
+        assert all(x.is_ask for x in ask_orders)
+        self.market = market
+        self.bid_orders =  bid_orders
+        self.ask_orders = ask_orders

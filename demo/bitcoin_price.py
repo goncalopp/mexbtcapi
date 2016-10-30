@@ -1,13 +1,14 @@
 import mexbtcapi
-from mexbtcapi.concepts.currencies import USD
+from mexbtcapi.concepts.currencies import BTC
 from mexbtcapi.concepts.currency import Amount
 
 
-dollars= "100"*USD
-for api in mexbtcapi.apis:
+bitcoins = 3 * BTC
+for market in mexbtcapi.markets.find(BTC):
     try:
-        exchange_rate= api.market(USD).getTicker().sell
-        got = exchange_rate.convert( dollars )
-        print "At %s I can get %s for my %s (that's %s)"%(api.name, got, dollars, exchange_rate)
-    except:
-        print "Failed to use "+api.name 
+        exchange_rate= market.get_ticker().ask
+        got = exchange_rate.convert( bitcoins )
+        print "At %s I can get %s for my %s (that's %s)"%(market.name, got, bitcoins, exchange_rate)
+    except Exception as e:
+        print "Failed to use "+market.full_name 
+        print e
