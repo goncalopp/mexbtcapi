@@ -99,7 +99,7 @@ class CurrencyPair(object):
 
 
 class ExchangeRate(object):
-    """The proportion between two currenci es' values"""
+    """The proportion between two currencies' values"""
     def __init__(self, numerator_currency, denominator_currency, rate):
         '''Each DENOMINATOR is  worth RATE * NUMERATOR.
         Printed result is:  "RATE NUMERATOR/DENOMINATOR"'''
@@ -321,7 +321,8 @@ class Amount(object):
     def __rshift__(self, other):
         '''constructor for Order'''
         if isinstance(other, Amount):
-            other = ExchangeRate(other.currency, self.currency, self.value/other.value)
+            other = self / other
+            assert isinstance(other, ExchangeRate)
         if not other:
             other = None
         if other is None or isinstance(other, ExchangeRate):
