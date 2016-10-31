@@ -2,6 +2,7 @@
 #from api import bitcoin24
 
 from api import bitstamp
+from api import poloniex
 from concepts.market import MarketList
 import logging
 
@@ -16,6 +17,7 @@ apis = [
     #mtgox,       #closed in 2013
     #bitcoin24,   #closed in april 2013
     bitstamp,
+    poloniex,
     ]
 
 markets = MarketList(list(_generate_markets(apis)))
