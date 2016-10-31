@@ -1,23 +1,29 @@
-#from api import mtgox
-#from api import bitcoin24
-
-from api import bitstamp
-from api import poloniex
-from market import MarketList
 import logging
+#logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
+ 
+from . import api
+from . import market
 
-logging.basicConfig()
-logging.getLogger(__name__)
-
-def _generate_markets(apis):
-    for api in apis:
-        for market in api.markets:
+def _generate_markets(exchanges):
+    for exchange in exchanges:
+        log.debug("Loading markets on {}".format(exchange))
+        for market in exchange.market_list:
+            log.debug("Loaded market {}".format(market))
             yield market
-apis = [
-    #mtgox,       #closed in 2013
-    #bitcoin24,   #closed in april 2013
-    bitstamp,
-    poloniex,
-    ]
 
-markets = MarketList(list(_generate_markets(apis)))
+def _load_exchanges_from_modules(modules):
+    exchanges = {}
+    for module in modules:
+        try:
+            exchange = module.exchange
+            assert isinstance(exchange, market.Exchange)
+            exchanges[exchange.name] = exchange
+            log.debug("Loaded exchange {} from {}".format(exchange, module))
+        except Exception as e:
+            log.error("Failed to load exchange from {}: {}".format(module, e))
+    return exchanges
+
+
+exchanges = _load_exchanges_from_modules(api.apis)
+markets = market.MarketList(_generate_markets(exchanges.values()))

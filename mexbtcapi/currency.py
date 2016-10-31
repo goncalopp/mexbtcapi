@@ -2,7 +2,7 @@
 from decimal import Decimal
 from fractions import Fraction
 import logging
-
+import types
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +18,12 @@ def convert_to_decimal(number, frac=False):
 class Currency(object):
     """A currency (USD, EUR, ...)"""
     def __init__(self, name):
+        if isinstance(name, Currency):
+            name = name.name
+        elif isinstance(name, types.StringTypes):
+            name = name
+        else:
+            raise Exception("Can't create a Currency from {}".format(name))
         self.name = name
 
     def __repr__(self):
@@ -63,11 +69,10 @@ class CurrencyPair(object):
             self.currency = other_currency
 
     def __init__(self, currency1, currency2):
-        assert isinstance(currency1, Currency)
-        assert isinstance(currency2, Currency)
+        currency1 = Currency(currency1)
+        currency2 = Currency(currency2)
         if currency1 == currency2:
             raise self.WrongCurrency(None, currency1, "Can't create a pair with the same currency: {}".format(currency1))
-        assert currency1 != currency2
         self.currencies = (currency1, currency2)
 
     def __getitem__(self, i):
@@ -99,7 +104,7 @@ class CurrencyPair(object):
         return "<CurrencyPair({},{})>".format(self.currencies[0], self.currencies[1])
 
     def __str__(self):
-        return self.__repr__()
+        return "({}, {})".format(*self.currencies)
 
     def reverse(self):
         return CurrencyPair(self.currencies[1], self.currencies[0])

@@ -68,15 +68,10 @@ class Market(object):
         '''raised when there's something wrong with an order, in this
         market's context'''
 
-    def __init__(self, market_name, counter_currency, base_currency):
-        self._name = market_name
+    def __init__(self, exchange, counter_currency, base_currency):
+        self.exchange = exchange
         self.base_currency = base_currency
         self.counter_currency = counter_currency
-
-    @property
-    def name(self):
-        '''The name of this market. Doesn't include the currencies'''
-        return self._name
 
     @property
     def currencies(self):
@@ -85,7 +80,7 @@ class Market(object):
     @property
     def full_name(self):
         '''The full name of this market. Includes the currencies'''
-        full_name = "{_name} {base_currency}/{counter_currency}".format(**vars(self))
+        full_name = "{exchange} {base_currency}/{counter_currency}".format(**vars(self))
         return full_name
 
     @abstractmethod
@@ -117,13 +112,26 @@ class Market(object):
         return self.full_name
 
     def __repr__(self):
-        return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, self.name, self.counter_currency, self.base_currency)
+        return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, self.exchange, self.counter_currency, self.base_currency)
+
+@six.add_metaclass(ABCMeta)
+class Exchange(object):
+    def __init__(self, name, market_list):
+        assert isinstance(market_list, MarketList)
+        self.name = name
+        self.market_list = market_list
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<{0}({1})>".format(self.__class__.__name__, self.name)
 
 class MarketList(list):
     '''A searchable list of markets'''
     def __init__(self, list_of_markets):
-        assert all(isinstance(m, Market) for m in list_of_markets)
         list.__init__(self, list_of_markets)
+        assert all(isinstance(m, Market) for m in self)
 
     def find(self, currency1=None, currency2=None, exchange_name=None):
         exchange_name_lower = exchange_name.lower() if exchange_name else None

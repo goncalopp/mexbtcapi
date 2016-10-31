@@ -9,7 +9,7 @@ sys.path.append(os.path.join(this_module_dir, 'python-poloniex'))
 import poloniex
 
 import mexbtcapi
-from mexbtcapi.currency import Amount, ExchangeRate
+from mexbtcapi.currency import Amount, CurrencyPair, ExchangeRate
 from mexbtcapi.market import Market, Ticker, Order, Orderbook
 
 TICKER_CACHE_TIMEOUT = datetime.timedelta(seconds=1)
@@ -17,6 +17,15 @@ TICKER_CACHE_TIMEOUT = datetime.timedelta(seconds=1)
 client = poloniex.Poloniex()
 ticker_cache = None
 ticker_cache_updated = datetime.datetime(year=1970, month=1, day=1)
+
+def get_all_currency_pairs():
+    '''returns in order (counter_currency, base_currency).'''
+    tickers = client.marketTicker()
+    pair_strs = tickers.keys()
+    tuples = [s.split("_") for s in pair_strs]
+    assert all(len(t) == 2 for t in tuples)
+    pairs = [CurrencyPair(t[0], t[1]) for t in tuples]
+    return pairs
 
 def get_global_ticker():
     '''Poloniex only method for getting a ticker returns it for all currencies.
