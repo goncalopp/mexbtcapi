@@ -7,7 +7,7 @@ from mexbtcapi.concepts.currency import ExchangeRate, Amount
 
 
 class Order(object):
-    """Represents an order to sell a number of from_amount for exchange_rate.
+    """Represents an o rder to sell a number of from_amount for exchange_rate.
     """
     TYPES = ('market', 'limit')
     def __init__(self, from_amount, exchange_rate=None, otype=None, market=None, entity=None, timestamp=None):
@@ -215,13 +215,21 @@ class Ticker(object):
     def __repr__(self):
         return "<{cname}({time}, {dict}>".format(cname=self.__class__.__name__, time=self.time, dict=vars(self))
 
-class OrderBook(object):
+class Orderbook(object):
     def __init__(self, market, bid_orders, ask_orders):
         assert isinstance(market, Market)
         assert all(isinstance(x, Order) for x in bid_orders)
         assert all(isinstance(x, Order) for x in ask_orders)
         assert all(x.is_bid for x in bid_orders)
         assert all(x.is_ask for x in ask_orders)
+        if len(bid_orders):
+            #bid rates are sorted in descending order
+            rates = [bid.exchange_rate.rate for bid in bid_orders]
+            assert rates == sorted(rates, reverse=True)
+        if len(ask_orders):
+            #ask rates are sorted in ascending order
+            rates = [ask.exchange_rate.rate for ask in ask_orders]
+            assert rates == sorted(rates)
         self.market = market
-        self.bid_orders =  bid_orders
-        self.ask_orders = ask_orders
+        self.bids =  bid_orders
+        self.asks = ask_orders
