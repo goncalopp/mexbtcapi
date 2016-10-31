@@ -10,7 +10,7 @@ import poloniex
 
 import mexbtcapi
 from mexbtcapi.concepts.currency import Amount, ExchangeRate
-from mexbtcapi.concepts.market import Market as Market, PassiveParticipant, Ticker
+from mexbtcapi.concepts.market import Market as Market, PassiveParticipant, Ticker, Order, Orderbook
 
 TICKER_CACHE_TIMEOUT = datetime.timedelta(seconds=1)
 
@@ -67,7 +67,18 @@ class PoloniexMarket(Market):
         return PoloniexTicker(market=self, time=time, **d)
 
     def get_orderbook(self):
-        raise NotImplementedError
+        def row_to_order(row, bid=False):
+            er_str, amount_str = row
+            er = self.create_er(er_str)
+            amount = Amount(amount_str, self.base_currency)
+            from_amount = amount if not bid else er.convert(amount)
+            order = Order(from_amount=from_amount, exchange_rate=er, market=self)
+            return order
+        data = client.marketOrders(self.curr_code)
+        bids = [row_to_order(x, True)  for x in data['bids']]
+        asks = [row_to_order(x, False) for x in data['asks']]
+        return Orderbook(self, bids, asks)
+
 
     def authenticate(self):
         raise NotImplementedError
