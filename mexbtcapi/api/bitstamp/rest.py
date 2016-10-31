@@ -25,11 +25,11 @@ class BitstampTicker(Ticker):
 
 class BitstampMarket(Market):
     def __init__(self, currency):
-        mexbtcapi.concepts.market.Market.__init__(self, 'Bitstamp', BTC, currency)
+        mexbtcapi.concepts.market.Market.__init__(self, 'Bitstamp', currency, BTC)
         self.curr_code = CURRENCIES[currency]
 
     def create_er(self, rate):
-        return ExchangeRate(numerator_currency=self.counter_currency, denominator_currency=BTC, rate=rate)
+        return ExchangeRate(numerator_currency=self.counter_currency, denominator_currency=self.base_currency, rate=rate)
 
     def get_ticker(self):
         url = BASE_URL.format(currency=self.curr_code, method='ticker')

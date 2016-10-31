@@ -68,7 +68,7 @@ class Market(object):
         '''raised when there's something wrong with an order, in this
         market's context'''
 
-    def __init__(self, market_name, base_currency, counter_currency):
+    def __init__(self, market_name, counter_currency, base_currency):
         self._name = market_name
         self.base_currency = base_currency
         self.counter_currency = counter_currency
@@ -117,7 +117,7 @@ class Market(object):
         return self.full_name
 
     def __repr__(self):
-        return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, self.name, self.base_currency, self.counter_currency)
+        return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, self.name, self.counter_currency, self.base_currency)
 
 class MarketList(list):
     '''A searchable list of markets'''
