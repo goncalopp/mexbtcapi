@@ -1,6 +1,6 @@
 import mexbtcapi
-from mexbtcapi.concepts.currencies import BTC
-from mexbtcapi.concepts.currency import Amount
+from mexbtcapi.currencies import BTC
+from mexbtcapi.currency import Amount
 
 
 bitcoins = 3 * BTC

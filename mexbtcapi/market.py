@@ -3,7 +3,7 @@ from decimal import Decimal
 from abc import ABCMeta, abstractmethod
 import six
 
-from mexbtcapi.concepts.currency import ExchangeRate, Amount
+from mexbtcapi.currency import ExchangeRate, Amount
 
 
 class Order(object):

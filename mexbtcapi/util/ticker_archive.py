@@ -5,9 +5,9 @@ import numpy as np
 import bisect
 
 import mexbtcapi
-from mexbtcapi.concepts.currencies import BTC
-from mexbtcapi.concepts.market import Market
-from mexbtcapi.concepts.numpy_conversions import numpy_to_ticker_list, ticker_list_to_numpy
+from mexbtcapi.currencies import BTC
+from mexbtcapi.market import Market
+from mexbtcapi.numpy_conversions import numpy_to_ticker_list, ticker_list_to_numpy
 
 class TickerArchive(object):
     '''A directory on disk with saved ticker data. 

@@ -3,7 +3,7 @@
 
 from api import bitstamp
 from api import poloniex
-from concepts.market import MarketList
+from market import MarketList
 import logging
 
 logging.basicConfig()

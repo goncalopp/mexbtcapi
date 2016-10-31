@@ -9,7 +9,7 @@ from multiprocessing.pool import ThreadPool
 
 import mexbtcapi
 from mexbtcapi.util.monitor import Monitor, each_interval_callback
-from mexbtcapi.concepts.currencies import USD, BTC
+from mexbtcapi.currencies import USD, BTC
 from mexbtcapi.util.ticker_archive import TickerArchive
 
 

@@ -1,5 +1,5 @@
 import mexbtcapi
-from mexbtcapi.concepts.currencies import USD
+from mexbtcapi.currencies import USD
 from mexbtcapi import api
 
 market= mexbtcapi.api.mtgox.market(USD)

@@ -1,7 +1,7 @@
 '''Tests for currency.py'''
 import unittest
 from decimal import Decimal
-from mexbtcapi.concepts.currency import Currency, ExchangeRate, Amount, CurrencyPair
+from mexbtcapi.currency import Currency, ExchangeRate, Amount, CurrencyPair
 
 class CurrencytTest(unittest.TestCase):
     def test_create(self): 

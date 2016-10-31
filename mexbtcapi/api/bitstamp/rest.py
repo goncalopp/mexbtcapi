@@ -2,11 +2,10 @@ from decimal import Decimal
 import datetime
 
 import mexbtcapi
-from mexbtcapi.concepts.currencies import BTC, USD, EUR
-from mexbtcapi.concepts.currency import Amount, ExchangeRate
-from mexbtcapi.concepts.market import Market as Market, PassiveParticipant, Ticker
+from mexbtcapi.currencies import BTC, USD, EUR
+from mexbtcapi.currency import Amount, ExchangeRate
+from mexbtcapi.market import Market, Ticker
 
-import urllib
 import urllib2
 import json
 
@@ -25,7 +24,7 @@ class BitstampTicker(Ticker):
 
 class BitstampMarket(Market):
     def __init__(self, currency):
-        mexbtcapi.concepts.market.Market.__init__(self, 'Bitstamp', currency, BTC)
+        Market.__init__(self, 'Bitstamp', currency, BTC)
         self.curr_code = CURRENCIES[currency]
 
     def create_er(self, rate):

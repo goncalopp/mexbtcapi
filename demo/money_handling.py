@@ -1,5 +1,5 @@
 import mexbtcapi
-from mexbtcapi.concepts.currencies import USD, EUR, BTC
+from mexbtcapi.currencies import USD, EUR, BTC
 
 
 money_usd= 10*USD       #Amount

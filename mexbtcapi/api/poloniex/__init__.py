@@ -1,5 +1,5 @@
 from mexbtcapi.api.poloniex.rest import PoloniexMarket, client as rest_client
-from mexbtcapi.concepts.currency import Currency, CurrencyPair
+from mexbtcapi.currency import Currency, CurrencyPair
 
 def get_currency_pairs_from_poloniex_service(rest_client):
     '''returns in order (counter_currency, base_currency).'''

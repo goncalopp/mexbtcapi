@@ -9,8 +9,8 @@ sys.path.append(os.path.join(this_module_dir, 'python-poloniex'))
 import poloniex
 
 import mexbtcapi
-from mexbtcapi.concepts.currency import Amount, ExchangeRate
-from mexbtcapi.concepts.market import Market as Market, PassiveParticipant, Ticker, Order, Orderbook
+from mexbtcapi.currency import Amount, ExchangeRate
+from mexbtcapi.market import Market, Ticker, Order, Orderbook
 
 TICKER_CACHE_TIMEOUT = datetime.timedelta(seconds=1)
 
@@ -47,7 +47,7 @@ class PoloniexTicker(Ticker):
 
 class PoloniexMarket(Market):
     def __init__(self, counter_currency, base_currency):
-        mexbtcapi.concepts.market.Market.__init__(self, 'Poloniex', counter_currency, base_currency)
+        Market.__init__(self, 'Poloniex', counter_currency, base_currency)
 
     @property
     def curr_code(self):

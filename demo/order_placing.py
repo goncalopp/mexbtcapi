@@ -1,5 +1,5 @@
 import mexbtcapi
-from mexbtcapi.concepts.currencies import USD, BTC
+from mexbtcapi.currencies import USD, BTC
 
 print "A order is the intention to exchange two amounts of currency"
 
