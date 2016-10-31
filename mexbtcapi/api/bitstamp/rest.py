@@ -23,8 +23,8 @@ class BitstampTicker(Ticker):
     NUMBER_FIELDS = Ticker.NUMBER_FIELDS + ('volume',)
 
 class BitstampMarket(Market):
-    def __init__(self, currency):
-        Market.__init__(self, 'Bitstamp', currency, BTC)
+    def __init__(self, exchange, currency):
+        Market.__init__(self, exchange, currency, BTC)
         self.curr_code = CURRENCIES[currency]
 
     def create_er(self, rate):
