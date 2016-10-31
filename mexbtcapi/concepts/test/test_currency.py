@@ -4,9 +4,48 @@ from decimal import Decimal
 from mexbtcapi.concepts.currency import Currency, ExchangeRate, Amount, CurrencyPair
 
 class CurrencytTest(unittest.TestCase):
-    def test_create(self):
+    def test_create(self): 
         c1 = Currency("c1")
         self.assertIsInstance(c1, Currency)
+
+    def test_equality(self):
+        c1, c1_, c2 = Currency("c1"), Currency("c1"), Currency("c2") 
+        self.assertEqual(c1, c1_)
+        self.assertNotEqual(c1, c2)
+
+    def test_hash(self):
+        c1, c1_, c2 = Currency("c1"), Currency("c1"), Currency("c2") 
+        self.assertEqual(set((c1,c1_)), set((c1,)))
+        self.assertEqual(len({c1:1, c1_:1}), 1)
+        self.assertEqual(len({c1:1, c2:1}), 2)
+        self.assertEqual(len({c1:1, "c1":1}), 2)
+
+class CurrencyPairTest(unittest.TestCase):
+    @staticmethod
+    def create_pair():
+        c1, c2, c3 = Currency("c1"), Currency("c2"), Currency("c3")
+        p1, p1_, p2, p3= CurrencyPair(c1,c2), CurrencyPair(c1,c3)
+
+    def test_equality(self):
+        c1, c1_, c2, c3 = Currency("c1"), Currency("c1"), Currency("c2"), Currency("c3")
+        p1, p1_, p2, p3= CurrencyPair(c1,c2), CurrencyPair(c1_,c2), CurrencyPair(c1,c3), CurrencyPair(c3,c2)
+        self.assertEqual(p1,p1_)
+        self.assertNotEqual(p1,p2)
+        self.assertNotEqual(p1,p3)
+
+    def test_equality_reversed(self):
+        c1, c2 = Currency("c1"), Currency("c2")
+        self.assertNotEqual(CurrencyPair(c1,c2), CurrencyPair(c2, c1))
+
+    def test_hash(self):
+        c1, c1_, c2 = Currency("c1"), Currency("c1"), Currency("c2")
+        p1, p1_, p2 = CurrencyPair(c1,c2), CurrencyPair(c1_,c2), CurrencyPair(c2,c1)
+        self.assertEqual(set((p1,p1_)), set((p1,)))
+        self.assertEqual(len({p1:1, p1_:1}), 1)
+        self.assertEqual(len({p1:1, p2:1}), 2)
+
+# TODO: test all CurrencyPair methods
+
 
 
 class AmountTest(unittest.TestCase):

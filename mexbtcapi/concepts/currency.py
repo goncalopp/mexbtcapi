@@ -26,6 +26,17 @@ class Currency(object):
     def __str__(self):
         return self.name
 
+    def __eq__(self, other):
+        if not isinstance(other, Currency):
+            return False
+        return self.name == other.name
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash(self.name)
+
     def __rmul__(self, other):
         try:
             return Amount(other, self)
@@ -52,6 +63,11 @@ class CurrencyPair(object):
             self.currency = other_currency
 
     def __init__(self, currency1, currency2):
+        assert isinstance(currency1, Currency)
+        assert isinstance(currency2, Currency)
+        if currency1 == currency2:
+            raise self.WrongCurrency(None, currency1, "Can't create a pair with the same currency: {}".format(currency1))
+        assert currency1 != currency2
         self.currencies = (currency1, currency2)
 
     def __getitem__(self, i):
@@ -93,6 +109,9 @@ class CurrencyPair(object):
         if not isinstance(other, CurrencyPair):
             raise e
         return self.currencies == other.currencies
+
+    def __hash__(self):
+        return hash(self.currencies)
 
     def __ne__(self, other):
         return not (self == other)
