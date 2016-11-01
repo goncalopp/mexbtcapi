@@ -1,8 +1,14 @@
 '''Tests for pubsub.py'''
 
+from collections import defaultdict
 import unittest
 from mock import MagicMock
+import random
+
 from mexbtcapi.pubsub import Publisher, Subscription, MultichannelPublisher
+
+#make tests deterministic
+random.seed(0)
 
 
 class PublisherTest(unittest.TestCase):
@@ -12,7 +18,7 @@ class PublisherTest(unittest.TestCase):
         subscriber = MagicMock()
         m = message if message != 'novalue' else cls._get_test_messages()[0]
         subscription = p.subscribe(subscriber, start=start)
-        p.send_message(m)
+        p.send(m)
         return p, subscriber, subscription
 
     @classmethod
@@ -27,7 +33,7 @@ class PublisherTest(unittest.TestCase):
         m1, m2, _= self._get_test_messages()
         subscriber.assert_called_with(m1)
         self.assertEqual(subscriber.call_count, 1)
-        p.send_message(m2)
+        p.send(m2)
         subscriber.assert_called_with(m2)
         self.assertEqual(subscriber.call_count, 2)
 
@@ -36,7 +42,7 @@ class PublisherTest(unittest.TestCase):
         subscriber.assert_not_called()
         subscription.start()
         m1, _, _ = self._get_test_messages()
-        p.send_message(m1)
+        p.send(m1)
         subscriber.assert_called_with(m1)
 
     def test_start_subscription_twice(self):
@@ -76,7 +82,7 @@ class PublisherTest(unittest.TestCase):
         subscriber3.assert_called_with(m3)
         #unsubscribe 1
         subscription1.stop()
-        p.send_message(m1)
+        p.send(m1)
         self.assertEqual(subscriber1.call_count, 3)
         self.assertEqual(subscriber2.call_count, 3)
         self.assertEqual(subscriber3.call_count, 2)
@@ -85,7 +91,7 @@ class PublisherTest(unittest.TestCase):
         subscriber3.assert_called_with(m1)    
         #unsubscribe 2
         subscription2.stop()
-        p.send_message(m2)
+        p.send(m2)
         self.assertEqual(subscriber1.call_count, 3)
         self.assertEqual(subscriber2.call_count, 3)
         self.assertEqual(subscriber3.call_count, 3)
@@ -94,7 +100,7 @@ class PublisherTest(unittest.TestCase):
         subscriber3.assert_called_with(m2) 
         #unsubscribe 3
         subscription3.stop()
-        p.send_message(123)
+        p.send(123)
         self.assertEqual(subscriber1.call_count, 3)
         self.assertEqual(subscriber2.call_count, 3)
         self.assertEqual(subscriber3.call_count, 3)
@@ -106,10 +112,10 @@ class PublisherTest(unittest.TestCase):
         p, subscriber, subscription = self._get_subscribed_and_send()
         self.assertEqual(subscriber.call_count, 1)
         m1, _, _ = self._get_test_messages()
-        p.send_message(m1)
+        p.send(m1)
         self.assertEqual(subscriber.call_count, 2)
         subscription.stop()
-        p.send_message(m1)
+        p.send(m1)
         self.assertEqual(subscriber.call_count, 2)
 
     def test_start_stop_callbacks(self):
@@ -184,7 +190,7 @@ class PublisherNestedTest(unittest.TestCase):
         self.assertEqual(np1.active, True)
         self.assertEqual(np2.active, False)
         #send message to p
-        p.send_message(1)
+        p.send(1)
         np1_sub1.assert_called_with(1)
         np1_sub2.assert_called_with(1)
         self.assertEqual(np2_sub1.call_count, 0)
@@ -194,7 +200,7 @@ class PublisherNestedTest(unittest.TestCase):
         self.assertEqual(np1.active, True)
         self.assertEqual(np2.active, True)
         #send message to p
-        p.send_message(2)
+        p.send(2)
         np1_sub1.assert_called_with(2)
         np1_sub2.assert_called_with(2)
         np2_sub1.assert_called_with(2)
@@ -207,7 +213,7 @@ class PublisherNestedTest(unittest.TestCase):
         self.assertEqual(np1.active, True)
         self.assertEqual(np2.active, False)
         #send message to p
-        p.send_message(3)
+        p.send(3)
         np1_sub1.assert_called_with(3)
         np1_sub2.assert_called_with(3)
         np2_sub1.assert_called_with(2)
@@ -220,7 +226,7 @@ class PublisherNestedTest(unittest.TestCase):
         self.assertEqual(np1.active, True)
         self.assertEqual(np2.active, False)
         #send message to p
-        p.send_message(4)
+        p.send(4)
         np1_sub1.assert_called_with(4)
         np1_sub2.assert_called_with(3)
         np2_sub1.assert_called_with(2)
@@ -233,7 +239,7 @@ class PublisherNestedTest(unittest.TestCase):
         self.assertEqual(np1.active, False)
         self.assertEqual(np2.active, False)
         #send message to p
-        p.send_message(5)
+        p.send(5)
         np1_sub1.assert_called_with(4)
         np1_sub2.assert_called_with(3)
         np2_sub1.assert_called_with(2)
@@ -249,23 +255,23 @@ class MultichannelPublisherTest(unittest.TestCase):
         p = MultichannelPublisher()
         self.assertEqual(p.active, False)
         #send messages to random channels
-        p.send_message(9, "c1")
-        p.send_message(9, "c2")
-        p.send_message(9, "something")
-        p.send_message(9, "mychannel")
+        p.send(9, "c1")
+        p.send(9, "c2")
+        p.send(9, "something")
+        p.send(9, "mychannel")
         #subscribe to c1
         c1_sub1_subs = p.subscribe(c1_sub1, "c1")
         self.assertEqual(p.active, True)
         c1_sub2_subs = p.subscribe(c1_sub2, "c1")
         #send message to c1
-        p.send_message(1, "c1")
+        p.send(1, "c1")
         c1_sub1.assert_called_with(1)
         c1_sub2.assert_called_with(1)
         self.assertEqual(c2_sub1.call_count, 0)
         #subscribe to c2
         c2_sub1_subs = p.subscribe(c2_sub1, "c2")
         #send message to c2
-        p.send_message(2, "c2")
+        p.send(2, "c2")
         c1_sub1.assert_called_with(1)
         c1_sub2.assert_called_with(1)
         c2_sub1.assert_called_with(2)
@@ -276,7 +282,7 @@ class MultichannelPublisherTest(unittest.TestCase):
         c2_sub1_subs.stop()
         self.assertEqual(p.active, True)
         #send message to c2
-        p.send_message(3, "c2")
+        p.send(3, "c2")
         c1_sub1.assert_called_with(1)
         c1_sub2.assert_called_with(1)
         c2_sub1.assert_called_with(2)
@@ -287,7 +293,7 @@ class MultichannelPublisherTest(unittest.TestCase):
         c1_sub2_subs.stop()
         self.assertEqual(p.active, True)
         #send message to c1
-        p.send_message(4, "c1")
+        p.send(4, "c1")
         c1_sub1.assert_called_with(4)
         c1_sub2.assert_called_with(1)
         c2_sub1.assert_called_with(2)
@@ -298,7 +304,7 @@ class MultichannelPublisherTest(unittest.TestCase):
         c1_sub1_subs.stop()
         self.assertEqual(p.active, False)
         #send message to c1
-        p.send_message(5, "c1")
+        p.send(5, "c1")
         c1_sub1.assert_called_with(4)
         c1_sub2.assert_called_with(1)
         c2_sub1.assert_called_with(2)
@@ -306,6 +312,62 @@ class MultichannelPublisherTest(unittest.TestCase):
         self.assertEqual(c1_sub2.call_count, 1)
         self.assertEqual(c2_sub1.call_count, 1)
         self.assertEqual(p.active, False)
+
+    def test_random(self):
+        iterations = 100
+        n_subscribers = 100
+        n_channels = 10
+        def join_prob_iter(i):
+            '''probability of a subscriber joining, vs leaving, for a given iteration number'''
+            return max(0.0, min(1.0, 1 - i / float(iterations) )) #start at 100%, end at 0%
+
+        channels = ["c_"+str(n) for n in range(10)]
+        messages = ["m_"+str(n) for n in range(100)]
+        subscribers = [MagicMock() for x in range(n_subscribers)]
+        unjoined = set(subscribers)
+        joined = set()
+        p = MultichannelPublisher()
+        channel_subs = defaultdict(set)
+        sub_channel = {}
+        subscriptions = {} #keyed by subscriber
+        n_received_messages = defaultdict(lambda:0) # keyed by subscriber
+
+        for iteration in range(iterations):
+            self.assertEqual(p.num_subscriptions, len(joined))
+            join = random.random() < join_prob_iter(iteration)
+            leave = not join
+            if join and len(unjoined)>0:
+                join_channel = random.choice(channels)
+                join_sub = random.choice(tuple(unjoined))
+                assert not join_sub in joined
+                assert not join_sub in subscriptions
+                subscription = p.subscribe(join_sub, join_channel)
+                subscriptions[join_sub] = subscription
+                channel_subs[join_channel].add(join_sub)
+                sub_channel[join_sub] = join_channel
+                unjoined.remove(join_sub)
+                joined.add(join_sub)
+            if leave and len(joined)>0:
+                leave_sub = random.choice(tuple(joined))
+                leave_channel = sub_channel[leave_sub]
+                subscriptions[leave_sub].stop()
+                subscriptions.pop(leave_sub)
+                sub_channel[leave_sub] = None
+                unjoined.add(leave_sub)
+                joined.remove(leave_sub)
+                channel_subs[leave_channel].remove(leave_sub)
+            channel = random.choice(channels)
+            message = random.choice(messages)
+            p.send(message, channel)
+            current_channel_subs = channel_subs[channel]
+            for subscribed_sub in current_channel_subs:
+                n_received_messages[subscribed_sub]+=1
+                subscribed_sub.assert_called_with(message)
+            for sub in subscribers:
+                self.assertEqual(sub.call_count, n_received_messages[sub])
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

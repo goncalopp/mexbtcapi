@@ -55,11 +55,16 @@ class Publisher(object):
     def add_stop_callback(self, f):
         self._stop_callbacks.append(f)
 
-    def send_message(self, message):
+    @property
+    def num_subscriptions(self):
+        '''Returns the number of active subscriptions to this publisher'''
+        return len(self._active_subscriptions)
+
+    def send(self, message):
         '''Makes this publisher send a message to its subscribers'''
         subscriptions = tuple(self._active_subscriptions) # make a copy, as original might be modified while running
         for subscription in subscriptions:
-            subscription.send_message(message)
+            subscription.send(message)
     
     @property
     def active(self):
@@ -101,9 +106,9 @@ class Subscription(object):
     def stop(self):
         self.publisher.stop_subscription(self)
 
-    def send_message(self, message):
+    def send(self, message):
         if isinstance(self.subscriber, Publisher):
-            self.subscriber.send_message(message)
+            self.subscriber.send(message)
         else:
             self.subscriber(message)
 
@@ -120,12 +125,16 @@ class MultichannelPublisher(Publisher):
             self._inactive_subscriptions.add(channel_sub)
         return self._channel_to_sub[channel_name]
 
-    def send_message(self, message, channel):
+    def send(self, message, channel):
         sub = self._get_or_create_channel_subscription(channel)
-        sub.send_message(message)
+        sub.send(message)
 
     def subscribe(self, subscriber, channel, start=True):
         sub = self._get_or_create_channel_subscription(channel)
         channel_pub = sub.subscriber
         assert isinstance(channel_pub, Publisher)
         return channel_pub.subscribe(subscriber, start=start)
+
+    @property
+    def num_subscriptions(self):
+        return sum(sub.subscriber.num_subscriptions for sub in self._active_subscriptions)
