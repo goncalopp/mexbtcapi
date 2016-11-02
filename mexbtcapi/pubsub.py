@@ -9,7 +9,6 @@ log = logging.getLogger(__name__)
 class Publisher(object):
     '''This class emits events'''
     def __init__(self):
-        self._inactive_subscriptions = set()
         self._active_subscriptions = set()
         self._start_callbacks = []
         self._stop_callbacks = []
@@ -17,17 +16,15 @@ class Publisher(object):
 
     def subscribe(self, subscriber, start=True):
         sub = Subscription(self, subscriber)
-        self._inactive_subscriptions.add(sub)
         log.info("{} has new subscription, id={}, subscriber={}, ".format(self, sub.id, subscriber))
         if start:
             sub.start()
         return sub
 
     def is_subscription_active(self, subscription):
+        if subscription.publisher is not self:
+            raise Exception("Subscription is for a different Publisher")
         in_active = subscription in self._active_subscriptions
-        in_inactive = subscription in self._inactive_subscriptions
-        if (not in_active) and (not in_inactive):
-            raise Exception("Unknown subscription: {}".format(subscription))
         return in_active
 
     def start_subscription(self, subscription):
@@ -35,7 +32,6 @@ class Publisher(object):
         if self.is_subscription_active(subscription):
             raise Subscription.StateException("Subscription already started: {}".format(subscription))
         starting = len(self._active_subscriptions) == 0
-        self._inactive_subscriptions.remove(subscription)
         self._active_subscriptions.add(subscription)
         if starting:
             self._start()
@@ -46,7 +42,6 @@ class Publisher(object):
             raise Subscription.StateException("Subscription already stopped: {}".format(subscription))
         stopping = len(self._active_subscriptions) == 1
         self._active_subscriptions.remove(subscription)
-        self._inactive_subscriptions.add(subscription)
         if stopping:
             self._stop()
 
@@ -127,7 +122,6 @@ class MultichannelPublisher(Publisher):
             channel_pub = Publisher()
             channel_sub = Subscription(self, channel_pub)
             self._channel_to_sub[channel_name] = channel_sub
-            self._inactive_subscriptions.add(channel_sub)
         return self._channel_to_sub[channel_name]
 
     def send(self, message, channel):
