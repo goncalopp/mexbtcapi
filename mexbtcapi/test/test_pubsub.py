@@ -366,8 +366,56 @@ class MultitopicPublisherTest(unittest.TestCase):
             for sub in subscribers:
                 self.assertEqual(sub.call_count, n_received_messages[sub])
 
+    def test_all_channels_subscribe(self):
+        c1_sub = MagicMock()
+        c2_sub = MagicMock()
+        all_sub = MagicMock()
+        p = MultitopicPublisher()
+        #subscribe
+        c1_sub_subs = p.subscribe(c1_sub, "c1")
+        c2_sub_subs = p.subscribe(c2_sub, "c2")
+        all_sub_subs = p.subscribe(all_sub, MultitopicPublisher.ALL_TOPICS)
+        #send message to c1
+        p.send(1, "c1")
+        c1_sub.assert_called_with(1)
+        all_sub.assert_called_with(1)
+        self.assertEqual(c1_sub.call_count, 1)
+        self.assertEqual(c2_sub.call_count, 0)
+        self.assertEqual(all_sub.call_count, 1)
+        #send message to c2
+        p.send(2, "c2")
+        c1_sub.assert_called_with(1)
+        c2_sub.assert_called_with(2)
+        all_sub.assert_called_with(2)
+        self.assertEqual(c1_sub.call_count, 1)
+        self.assertEqual(c2_sub.call_count, 1)
+        self.assertEqual(all_sub.call_count, 2)
 
-
+    def test_all_channels_send(self):
+        c1_sub = MagicMock()
+        c2_sub = MagicMock()
+        all_sub = MagicMock()
+        p = MultitopicPublisher()
+        #subscribe
+        c1_sub_subs = p.subscribe(c1_sub, "c1")
+        c2_sub_subs = p.subscribe(c2_sub, "c2")
+        all_sub_subs = p.subscribe(all_sub, MultitopicPublisher.ALL_TOPICS)
+        #send message to ALL_TOPICS
+        p.send(1,MultitopicPublisher.ALL_TOPICS)
+        c1_sub.assert_called_with(1)
+        c2_sub.assert_called_with(1)
+        all_sub.assert_called_with(1)
+        self.assertEqual(c1_sub.call_count, 1)
+        self.assertEqual(c2_sub.call_count, 1)
+        self.assertEqual(all_sub.call_count, 1)
+        #send message to ALL_TOPICS
+        p.send(2, MultitopicPublisher.ALL_TOPICS)
+        c1_sub.assert_called_with(2)
+        c2_sub.assert_called_with(2)
+        all_sub.assert_called_with(2)
+        self.assertEqual(c1_sub.call_count, 2)
+        self.assertEqual(c2_sub.call_count, 2)
+        self.assertEqual(all_sub.call_count, 2)
 
 if __name__ == '__main__':
     unittest.main()

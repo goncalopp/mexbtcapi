@@ -112,26 +112,38 @@ class Subscription(object):
     def id(self):
         return id(self)
 
+class TopicPublisher(Publisher):
+    def __init__(self, topic):
+        self.topic = topic
+        Publisher.__init__(self)
+
 class MultitopicPublisher(Publisher):
+    ALL_TOPICS = '[ALL TOPICS]'
     def __init__(self):
         Publisher.__init__(self)
-        self._topic_to_sub = {}
+        self._topic_to_sub= {} # subscriptions from TopicPublisher to self
+        self._topic_to_sub[self.ALL_TOPICS] = Subscription(self, TopicPublisher(self.ALL_TOPICS))
+
 
     def _get_or_create_topic_subscription(self, topic_name):
         if not topic_name in self._topic_to_sub:
-            topic_pub = Publisher()
+            topic_pub = TopicPublisher(topic_name)
             topic_sub = Subscription(self, topic_pub)
             self._topic_to_sub[topic_name] = topic_sub
         return self._topic_to_sub[topic_name]
 
     def send(self, message, topic):
-        sub = self._get_or_create_topic_subscription(topic)
-        sub.send(message)
+        if topic == self.ALL_TOPICS:
+            channel_subs = (self._topic_to_sub.values()) #all topic channels, including ALL_TOPICS
+        else:
+            channel_subs = (self._get_or_create_topic_subscription(topic), self._topic_to_sub[self.ALL_TOPICS])
+        for sub in channel_subs:
+            sub.send(message)
 
     def subscribe(self, subscriber, topic, start=True):
         sub = self._get_or_create_topic_subscription(topic)
         topic_pub = sub.subscriber
-        assert isinstance(topic_pub, Publisher)
+        assert isinstance(topic_pub, TopicPublisher)
         return topic_pub.subscribe(subscriber, start=start)
 
     @property
