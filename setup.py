@@ -21,6 +21,7 @@ setup(
     install_requires=[
                       'six',
                       'requests', #for python-poloniex
+                      'autobahn-sync', #for poloniex streaming api
                       ],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

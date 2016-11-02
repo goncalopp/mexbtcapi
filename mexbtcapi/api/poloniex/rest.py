@@ -9,10 +9,12 @@ sys.path.append(os.path.join(this_module_dir, 'python-poloniex'))
 import poloniex
 
 import mexbtcapi
-from mexbtcapi.currency import Amount, CurrencyPair, ExchangeRate
-from mexbtcapi.market import Market, Ticker, Order, Orderbook
+from .common import PoloniexTicker, rename_dict_keys
+from mexbtcapi.currency import Amount, CurrencyPair
+from mexbtcapi.market import Order, Orderbook
 
 TICKER_CACHE_TIMEOUT = datetime.timedelta(seconds=1)
+POLONIEX_FIELD_MAP = {'high24hr':'high', 'highestBid':'bid', 'low24hr':'low', 'lowestAsk':'ask'}
 
 client = poloniex.Poloniex()
 ticker_cache = None
@@ -37,57 +39,23 @@ def get_global_ticker():
         ticker_cache_updated = datetime.datetime.now()
     return ticker_cache, ticker_cache_updated
 
-def rename_dict_keys(d, key_map):
-    '''renames dictionary keys of d according to key_map'''
-    d2 = {}
-    for k,v in d.items():
-        k = key_map.get(k, k)
-        d2[k] = v
-    return d2
+def get_ticker(market):
+    ticker, update_time = get_global_ticker()
+    cticker = ticker[market.curr_code]
+    data = rename_dict_keys(cticker, POLONIEX_FIELD_MAP)
+    time = update_time #no datetime on response, unfortunately
+    return PoloniexTicker.from_data(data, market, time)
 
+def get_orderbook(market):
+    def row_to_order(row, bid=False):
+        er_str, amount_str = row
+        er = market.create_er(er_str)
+        amount = Amount(amount_str, market.base_currency)
+        from_amount = amount if not bid else er.convert(amount)
+        order = Order(from_amount=from_amount, exchange_rate=er, market=market)
+        return order
+    data = client.marketOrders(market.curr_code)
+    bids = [row_to_order(x, True)  for x in data['bids']]
+    asks = [row_to_order(x, False) for x in data['asks']]
+    return Orderbook(market, bids, asks)
 
-
-class PoloniexTicker(Ticker):
-    TIME_PERIOD = datetime.timedelta(days=1)
-    RATE_FIELDS = Ticker.RATE_FIELDS + ('last', 'high', 'low')
-    NUMBER_FIELDS = Ticker.NUMBER_FIELDS + ()
-    POLONIEX_FIELD_MAP = {'high24hr':'high', 'highestBid':'bid', 'low24hr':'low', 'lowestAsk':'ask'}
-    # TODO : support all poloniex ticker fields
-
-class PoloniexMarket(Market):
-    def __init__(self, counter_currency, base_currency):
-        Market.__init__(self, 'Poloniex', counter_currency, base_currency)
-
-    @property
-    def curr_code(self):
-        return "{}_{}".format(self.counter_currency.name, self.base_currency.name)
-
-    def create_er(self, rate):
-        return ExchangeRate(numerator_currency=self.counter_currency, denominator_currency=self.base_currency, rate=rate)
-
-    def get_ticker(self):
-        ticker, update_time = get_global_ticker()
-        cticker = ticker[self.curr_code]
-        data = rename_dict_keys(cticker, PoloniexTicker.POLONIEX_FIELD_MAP)
-        time = update_time #no datetime on response, unfortunately
-        rates = {k: self.create_er(data[k]) for k in PoloniexTicker.RATE_FIELDS}
-        numbers = {k: Decimal((data[k])) for k in PoloniexTicker.NUMBER_FIELDS}
-        d = {} ; d.update(rates) ; d.update(numbers)
-        return PoloniexTicker(market=self, time=time, **d)
-
-    def get_orderbook(self):
-        def row_to_order(row, bid=False):
-            er_str, amount_str = row
-            er = self.create_er(er_str)
-            amount = Amount(amount_str, self.base_currency)
-            from_amount = amount if not bid else er.convert(amount)
-            order = Order(from_amount=from_amount, exchange_rate=er, market=self)
-            return order
-        data = client.marketOrders(self.curr_code)
-        bids = [row_to_order(x, True)  for x in data['bids']]
-        asks = [row_to_order(x, False) for x in data['asks']]
-        return Orderbook(self, bids, asks)
-
-
-    def authenticate(self):
-        raise NotImplementedError

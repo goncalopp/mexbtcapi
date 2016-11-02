@@ -8,7 +8,7 @@ from . import market
 def _generate_markets(exchanges):
     for exchange in exchanges:
         log.debug("Loading markets on {}".format(exchange))
-        for market in exchange.market_list:
+        for market in exchange.markets:
             log.debug("Loaded market {}".format(market))
             yield market
 

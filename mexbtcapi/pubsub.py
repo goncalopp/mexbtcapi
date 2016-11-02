@@ -18,6 +18,7 @@ class Publisher(object):
     def subscribe(self, subscriber, start=True):
         sub = Subscription(self, subscriber)
         self._inactive_subscriptions.add(sub)
+        log.info("{} has new subscription, id={}, subscriber={}, ".format(self, sub.id, subscriber))
         if start:
             sub.start()
         return sub
@@ -111,6 +112,10 @@ class Subscription(object):
             self.subscriber.send(message)
         else:
             self.subscriber(message)
+
+    @property
+    def id(self):
+        return id(self)
 
 class MultichannelPublisher(Publisher):
     def __init__(self):

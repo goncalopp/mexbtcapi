@@ -3,7 +3,8 @@ from decimal import Decimal
 from abc import ABCMeta, abstractmethod
 import six
 
-from mexbtcapi.currency import ExchangeRate, Amount
+from mexbtcapi.currency import ExchangeRate, Amount, Currency
+from mexbtcapi import pubsub
 
 
 class Order(object):
@@ -68,10 +69,16 @@ class Market(object):
         '''raised when there's something wrong with an order, in this
         market's context'''
 
-    def __init__(self, exchange, counter_currency, base_currency):
+    def __init__(self, exchange, counter_currency, base_currency, ticker_stream=None):
+        assert isinstance(exchange, Exchange)
+        assert isinstance(counter_currency, Currency)
+        assert isinstance(base_currency, Currency)
+        if ticker_stream is not None:
+            assert isinstance(ticker_stream, pubsub.Publisher)
         self.exchange = exchange
         self.base_currency = base_currency
         self.counter_currency = counter_currency
+        self._ticker_stream = ticker_stream
 
     @property
     def currencies(self):
@@ -87,6 +94,12 @@ class Market(object):
     def get_ticker(self):
         """Returns the most recent ticker"""
         raise NotImplementedError()
+
+    @property
+    def ticker_stream(self):
+        if self._ticker_stream is None:
+            raise NotImplementedError("This market doesn't provide a ticker stream api")
+        return self._ticker_stream
 
     @abstractmethod
     def get_orderbook(self):
@@ -119,7 +132,7 @@ class Exchange(object):
     def __init__(self, name, market_list):
         assert isinstance(market_list, MarketList)
         self.name = name
-        self.market_list = market_list
+        self.markets = market_list
 
     def __str__(self):
         return self.name
@@ -134,6 +147,10 @@ class MarketList(list):
         assert all(isinstance(m, Market) for m in self)
 
     def find(self, currency1=None, currency2=None, exchange_name=None):
+        if currency1:
+            currency1 = Currency(currency1)
+        if currency2:
+            currency2 = Currency(currency2)
         exchange_name_lower = exchange_name.lower() if exchange_name else None
         matches = [m for m in self if
                    (currency1 is None or currency1 in m.currencies) and
