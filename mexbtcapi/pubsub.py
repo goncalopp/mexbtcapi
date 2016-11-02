@@ -112,27 +112,27 @@ class Subscription(object):
     def id(self):
         return id(self)
 
-class MultichannelPublisher(Publisher):
+class MultitopicPublisher(Publisher):
     def __init__(self):
         Publisher.__init__(self)
-        self._channel_to_sub = {}
+        self._topic_to_sub = {}
 
-    def _get_or_create_channel_subscription(self, channel_name):
-        if not channel_name in self._channel_to_sub:
-            channel_pub = Publisher()
-            channel_sub = Subscription(self, channel_pub)
-            self._channel_to_sub[channel_name] = channel_sub
-        return self._channel_to_sub[channel_name]
+    def _get_or_create_topic_subscription(self, topic_name):
+        if not topic_name in self._topic_to_sub:
+            topic_pub = Publisher()
+            topic_sub = Subscription(self, topic_pub)
+            self._topic_to_sub[topic_name] = topic_sub
+        return self._topic_to_sub[topic_name]
 
-    def send(self, message, channel):
-        sub = self._get_or_create_channel_subscription(channel)
+    def send(self, message, topic):
+        sub = self._get_or_create_topic_subscription(topic)
         sub.send(message)
 
-    def subscribe(self, subscriber, channel, start=True):
-        sub = self._get_or_create_channel_subscription(channel)
-        channel_pub = sub.subscriber
-        assert isinstance(channel_pub, Publisher)
-        return channel_pub.subscribe(subscriber, start=start)
+    def subscribe(self, subscriber, topic, start=True):
+        sub = self._get_or_create_topic_subscription(topic)
+        topic_pub = sub.subscriber
+        assert isinstance(topic_pub, Publisher)
+        return topic_pub.subscribe(subscriber, start=start)
 
     @property
     def num_subscriptions(self):

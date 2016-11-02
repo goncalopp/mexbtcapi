@@ -5,7 +5,7 @@ import unittest
 from mock import MagicMock
 import random
 
-from mexbtcapi.pubsub import Publisher, Subscription, MultichannelPublisher
+from mexbtcapi.pubsub import Publisher, Subscription, MultitopicPublisher
 
 #make tests deterministic
 random.seed(0)
@@ -247,18 +247,18 @@ class PublisherNestedTest(unittest.TestCase):
         self.assertEqual(np1_sub2.call_count, 3)
         self.assertEqual(np2_sub1.call_count, 1)
 
-class MultichannelPublisherTest(unittest.TestCase):
+class MultitopicPublisherTest(unittest.TestCase):
     def test_simple(self):
         c1_sub1 = MagicMock()
         c1_sub2 = MagicMock()
         c2_sub1 = MagicMock()
-        p = MultichannelPublisher()
+        p = MultitopicPublisher()
         self.assertEqual(p.active, False)
-        #send messages to random channels
+        #send messages to random topics
         p.send(9, "c1")
         p.send(9, "c2")
         p.send(9, "something")
-        p.send(9, "mychannel")
+        p.send(9, "mytopic")
         #subscribe to c1
         c1_sub1_subs = p.subscribe(c1_sub1, "c1")
         self.assertEqual(p.active, True)
@@ -316,19 +316,19 @@ class MultichannelPublisherTest(unittest.TestCase):
     def test_random(self):
         iterations = 100
         n_subscribers = 100
-        n_channels = 10
+        n_topics = 10
         def join_prob_iter(i):
             '''probability of a subscriber joining, vs leaving, for a given iteration number'''
             return max(0.0, min(1.0, 1 - i / float(iterations) )) #start at 100%, end at 0%
 
-        channels = ["c_"+str(n) for n in range(10)]
+        topics = ["c_"+str(n) for n in range(10)]
         messages = ["m_"+str(n) for n in range(100)]
         subscribers = [MagicMock() for x in range(n_subscribers)]
         unjoined = set(subscribers)
         joined = set()
-        p = MultichannelPublisher()
-        channel_subs = defaultdict(set)
-        sub_channel = {}
+        p = MultitopicPublisher()
+        topic_subs = defaultdict(set)
+        sub_topic = {}
         subscriptions = {} #keyed by subscriber
         n_received_messages = defaultdict(lambda:0) # keyed by subscriber
 
@@ -337,30 +337,30 @@ class MultichannelPublisherTest(unittest.TestCase):
             join = random.random() < join_prob_iter(iteration)
             leave = not join
             if join and len(unjoined)>0:
-                join_channel = random.choice(channels)
+                join_topic = random.choice(topics)
                 join_sub = random.choice(tuple(unjoined))
                 assert not join_sub in joined
                 assert not join_sub in subscriptions
-                subscription = p.subscribe(join_sub, join_channel)
+                subscription = p.subscribe(join_sub, join_topic)
                 subscriptions[join_sub] = subscription
-                channel_subs[join_channel].add(join_sub)
-                sub_channel[join_sub] = join_channel
+                topic_subs[join_topic].add(join_sub)
+                sub_topic[join_sub] = join_topic
                 unjoined.remove(join_sub)
                 joined.add(join_sub)
             if leave and len(joined)>0:
                 leave_sub = random.choice(tuple(joined))
-                leave_channel = sub_channel[leave_sub]
+                leave_topic = sub_topic[leave_sub]
                 subscriptions[leave_sub].stop()
                 subscriptions.pop(leave_sub)
-                sub_channel[leave_sub] = None
+                sub_topic[leave_sub] = None
                 unjoined.add(leave_sub)
                 joined.remove(leave_sub)
-                channel_subs[leave_channel].remove(leave_sub)
-            channel = random.choice(channels)
+                topic_subs[leave_topic].remove(leave_sub)
+            topic = random.choice(topics)
             message = random.choice(messages)
-            p.send(message, channel)
-            current_channel_subs = channel_subs[channel]
-            for subscribed_sub in current_channel_subs:
+            p.send(message, topic)
+            current_topic_subs = topic_subs[topic]
+            for subscribed_sub in current_topic_subs:
                 n_received_messages[subscribed_sub]+=1
                 subscribed_sub.assert_called_with(message)
             for sub in subscribers:
