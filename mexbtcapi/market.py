@@ -234,8 +234,13 @@ class Ticker(object):
         if different_fields:
             raise Exception("Missing/extra fields: {}".format(different_fields))
         self.market, self.time = market, time
+        self.data = kwargs
         vars(self).update(kwargs)
         assert self.bid < self.ask
+
+    def __str__(self):
+        data_str = ", ".join("{}: {}".format(k,v) for k,v in self.data.items())
+        return "<{cname}({time}, {data}>".format(cname=self.__class__.__name__, time=self.time, data=data_str)
 
     def __repr__(self):
         return "<{cname}({time}, {dict}>".format(cname=self.__class__.__name__, time=self.time, dict=vars(self))
