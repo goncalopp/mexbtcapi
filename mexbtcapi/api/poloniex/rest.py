@@ -22,7 +22,7 @@ ticker_cache_updated = datetime.datetime(year=1970, month=1, day=1)
 
 def get_all_currency_pairs():
     '''returns in order (counter_currency, base_currency).'''
-    tickers = client.marketTicker()
+    tickers = client.returnTicker()
     pair_strs = tickers.keys()
     tuples = [s.split("_") for s in pair_strs]
     assert all(len(t) == 2 for t in tuples)
@@ -35,7 +35,7 @@ def get_global_ticker():
     global ticker_cache, ticker_cache_updated
     now = datetime.datetime.now()
     if ticker_cache is None or (now-ticker_cache_updated) > TICKER_CACHE_TIMEOUT:
-        ticker_cache = client.marketTicker()
+        ticker_cache = client.returnTicker()
         ticker_cache_updated = datetime.datetime.now()
     return ticker_cache, ticker_cache_updated
 
@@ -54,7 +54,7 @@ def get_orderbook(market):
         from_amount = amount if not bid else er.convert(amount)
         order = Order(from_amount=from_amount, exchange_rate=er, market=market)
         return order
-    data = client.marketOrders(market.curr_code)
+    data = client.returnOrderBook(market.curr_code)
     bids = [row_to_order(x, True)  for x in data['bids']]
     asks = [row_to_order(x, False) for x in data['asks']]
     return Orderbook(market, bids, asks)
