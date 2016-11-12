@@ -18,6 +18,9 @@ class Order(object):
     If exchange_rate is not defined, this represents a market order (i.e.: to be executed
     at any available rate)
     """
+    class ExecutionError(Exception):
+        '''Raised when there's a problem executing a order'''
+        pass
     def __init__(self, from_amount, exchange_rate=None, market=None, entity=None, timestamp=None):
         assert isinstance(from_amount, Amount)
         assert exchange_rate is None or isinstance(exchange_rate, ExchangeRate)
@@ -334,4 +337,4 @@ class Orderbook(object):
         self.market = market
         self.bids = tuple(bid_orders)
         self.asks = tuple(ask_orders)
-        self.market = market
+
