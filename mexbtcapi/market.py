@@ -263,17 +263,17 @@ class ActiveParticipant(Participant):
         pass
 
     @abstractmethod
-    def placeOrder(self, order):
+    def place_order(self, order):
         """places an Order in the market"""
         pass
 
     @abstractmethod
-    def cancelOrder(self, order):
+    def cancel_order(self, order):
         """Cancel an existing order"""
         pass
 
     @abstractmethod
-    def getOpenOrders(self):
+    def get_open_orders(self):
         """Gets all the open orders for this participant"""
         pass
 
