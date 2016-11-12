@@ -202,10 +202,10 @@ class Exchange(object):
     def __repr__(self):
         return "<{0}({1})>".format(self.__class__.__name__, self.name)
 
-class MarketList(list):
+class MarketList(tuple):
     '''A searchable list of markets'''
     def __init__(self, list_of_markets):
-        list.__init__(self, list_of_markets)
+        tuple.__init__(self, list_of_markets)
         assert all(isinstance(m, Market) for m in self)
         self._all = set(self)
         self._by_currency = defaultdict(set)
@@ -217,7 +217,7 @@ class MarketList(list):
 
     def find(self, currency1=None, currency2=None, exchange_name=None):
         '''Returns a sublist of contained markets, filtered by the given criteria'''
-        results = self._all
+        results = set(self._all) # make copy
         if currency1:
             currency1 = Currency(currency1)
             results &= self._by_currency[currency1]
