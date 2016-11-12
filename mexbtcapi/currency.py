@@ -215,6 +215,8 @@ class ExchangeRate(object):
             raise e
         return cmp(self.rate, other.rate)
 
+    def __hash__(self):
+        return hash((self._currencies, self._rate))
 
     def __repr__(self):
         return "<ExchangeRate({0:.5f} {1}/{2})>".format(float(self.rate), self.numerator.name, self.denominator.name)
@@ -353,3 +355,6 @@ class Amount(object):
             from market import Order
             return Order(self, other)
         raise ValueError("Can't shift {0} by {1}".format(self, other))
+
+    def __hash__(self):
+        return hash((self.value, self.currency))

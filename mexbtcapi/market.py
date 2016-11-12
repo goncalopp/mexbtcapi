@@ -1,6 +1,12 @@
+'''
+This module exposes several classes related to currency markets
+'''
+
 from datetime import datetime, timedelta
 from decimal import Decimal
 from abc import ABCMeta, abstractmethod
+from collections import defaultdict
+import copy
 import six
 
 from mexbtcapi.currency import ExchangeRate, Amount, Currency
@@ -8,13 +14,13 @@ from mexbtcapi import pubsub
 
 
 class Order(object):
-    """Represents an o rder to sell a number of from_amount for exchange_rate.
+    """Represents an order to sell a number of from_amount for exchange_rate.
+    If exchange_rate is not defined, this represents a market order (i.e.: to be executed
+    at any available rate)
     """
-    TYPES = ('market', 'limit')
-    def __init__(self, from_amount, exchange_rate=None, otype=None, market=None, entity=None, timestamp=None):
+    def __init__(self, from_amount, exchange_rate=None, market=None, entity=None, timestamp=None):
         assert isinstance(from_amount, Amount)
         assert exchange_rate is None or isinstance(exchange_rate, ExchangeRate)
-        assert otype is None or (otype in self.TYPES)
         assert market is None or isinstance(market, Market)
         assert entity is None or isinstance(entity, Participant)
         assert timestamp is None or isinstance(timestamp, datetime)
@@ -22,16 +28,49 @@ class Order(object):
         self.from_amount = from_amount
         self.exchange_rate = exchange_rate
         self.entity = entity
-        self.otype = otype if otype else 'market' if not exchange_rate else 'limit'
-        self.market = market
+        self._market = market
         self.timestamp = timestamp
 
-        if market:
-            market._order_sanity_check(self)
+
+    def _sanity_check(self):
+        # pylint: disable=protected-access
+        assert self.from_amount.value >= 0
+        if self._market is not None:
+            self._market._order_sanity_check(self)
 
     @property
     def to_amount(self):
         return self.exchange_rate.convert(self.from_amount)
+
+    @property
+    def rate(self):
+        return self.exchange_rate
+
+    @property
+    def market(self):
+        if self._market is not None:
+            return self._market
+        else:
+            raise Exception("Market is not set on order {}".format(self))
+
+    def with_market(self, market):
+        '''Returns a new Order, with market set to the specified one'''
+        # pylint: disable=protected-access
+        assert isinstance(market, Market)
+        self_copy = copy.copy(self)
+        self_copy._market = market
+        self_copy._sanity_check()
+        return self_copy
+
+
+    def with_from_amount(self, from_amount):
+        '''Returns a new Order, with amount set to the specified one'''
+        # pylint: disable=protected-access
+        assert isinstance(from_amount, Amount)
+        self_copy = copy.copy(self)
+        self_copy.from_amount = from_amount
+        self_copy._sanity_check()
+        return self_copy
 
     @property
     def is_bid(self):
@@ -45,6 +84,10 @@ class Order(object):
         (and buying the counter currency)'''
         return self.from_amount.currency == self.market.base_currency
 
+    @property
+    def is_market_order(self):
+        return self.exchange_rate is None
+
     def __str__(self):
         try:
             to_amount = self.to_amount
@@ -53,7 +96,21 @@ class Order(object):
         return "{0} >> {1}".format(self.from_amount, to_amount)
 
     def __repr__(self):
-        return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__, self.market, self.timestamp, self.from_amount, self.exchange_rate)
+        return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__, self.from_amount, self.exchange_rate, self._market, self.timestamp)
+
+    def __eq__(self, other):
+        # pylint: disable=protected-access
+        if not isinstance(other, Order):
+            return False
+        return hash(self) == hash(other)
+
+    def __ne__(self, other):
+        return not self == other #pylint: disable=unneeded-not
+
+    def __hash__(self):
+        return hash((self.from_amount, self.exchange_rate, self._market))
+
+
 
 @six.add_metaclass(ABCMeta)
 class Market(object):
@@ -116,10 +173,11 @@ class Market(object):
         er = order.exchange_rate
         if order.market and order.market != self:
             raise self.InvalidOrder("Order on different market")
-        try:
-            assert set(er.currencies) == set(self.currencies)
-        except AssertionError:
-            raise self.InvalidOrder("Invalid order exchange rate")
+        if er is not None:
+            try:
+                assert set(er.currencies) == set(self.currencies)
+            except AssertionError:
+                raise self.InvalidOrder("Invalid order exchange rate")
 
     def __str__(self):
         return self.full_name
@@ -129,10 +187,11 @@ class Market(object):
 
 @six.add_metaclass(ABCMeta)
 class Exchange(object):
+    '''A currency exchange.
+    It can expose several markets'''
     def __init__(self, name, market_list):
-        assert isinstance(market_list, MarketList)
         self.name = name
-        self.markets = market_list
+        self.markets = MarketList(market_list)
 
     def __str__(self):
         return self.name
@@ -145,18 +204,27 @@ class MarketList(list):
     def __init__(self, list_of_markets):
         list.__init__(self, list_of_markets)
         assert all(isinstance(m, Market) for m in self)
+        self._all = set(self)
+        self._by_currency = defaultdict(set)
+        self._by_exchange = defaultdict(set)
+        for market in self:
+            self._by_currency[market.base_currency].add(market)
+            self._by_currency[market.counter_currency].add(market)
+            self._by_exchange[market.exchange.name.lower()].add(market)
 
     def find(self, currency1=None, currency2=None, exchange_name=None):
+        '''Returns a sublist of contained markets, filtered by the given criteria'''
+        results = self._all
         if currency1:
             currency1 = Currency(currency1)
+            results &= self._by_currency[currency1]
         if currency2:
             currency2 = Currency(currency2)
-        exchange_name_lower = exchange_name.lower() if exchange_name else None
-        matches = [m for m in self if
-                   (currency1 is None or currency1 in m.currencies) and
-                   (currency2 is None or currency2 in m.currencies) and
-                   (exchange_name_lower is None or exchange_name_lower in m.name.lower())]
-        return matches
+            results &= self._by_currency[currency2]
+        if exchange_name:
+            exchange_name_lower = exchange_name.lower() if exchange_name else None
+            results &= self._by_exchange[exchange_name_lower]
+        return MarketList(results)
 
     def __repr__(self):
         return "<{}({})>".format(self.__class__.__name__, list.__repr__(self))
@@ -236,16 +304,17 @@ class Ticker(object):
         self.market, self.time = market, time
         self.data = kwargs
         vars(self).update(kwargs)
-        assert self.bid < self.ask
+        assert self.bid < self.ask # pylint: disable=no-member
 
     def __str__(self):
-        data_str = ", ".join("{}: {}".format(k,v) for k,v in self.data.items())
+        data_str = ", ".join("{}: {}".format(k, v) for k, v in self.data.items())
         return "<{cname}({time}, {data}>".format(cname=self.__class__.__name__, time=self.time, data=data_str)
 
     def __repr__(self):
         return "<{cname}({time}, {dict}>".format(cname=self.__class__.__name__, time=self.time, dict=vars(self))
 
 class Orderbook(object):
+    '''The list of open orders on a market'''
     def __init__(self, market, bid_orders, ask_orders):
         assert isinstance(market, Market)
         assert all(isinstance(x, Order) for x in bid_orders)
@@ -260,6 +329,9 @@ class Orderbook(object):
             #ask rates are sorted in ascending order
             rates = [ask.exchange_rate.rate for ask in ask_orders]
             assert rates == sorted(rates)
+        if bid_orders and ask_orders:
+            assert bid_orders[0].exchange_rate < ask_orders[0].exchange_rate
         self.market = market
-        self.bids =  bid_orders
-        self.asks = ask_orders
+        self.bids = tuple(bid_orders)
+        self.asks = tuple(ask_orders)
+        self.market = market

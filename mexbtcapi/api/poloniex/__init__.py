@@ -26,7 +26,7 @@ class PoloniexMarket(Market):
 
 class PoloniexExchange(Exchange):
     def __init__(self):
-        markets = MarketList(PoloniexMarket(self, *cp) for cp in CURRENCY_PAIRS)
+        markets = (PoloniexMarket(self, *cp) for cp in CURRENCY_PAIRS)
         Exchange.__init__(self, 'Poloniex', markets)
 
 exchange = PoloniexExchange()
