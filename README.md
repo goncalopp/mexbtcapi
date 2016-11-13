@@ -21,19 +21,19 @@ Donations of bitcoin are kindly accepted at **1NBmTawDXqj8mNzGZSTzS1qmeyBhNideTM
 Demo
 ==========
 
-Check the demo directory for usage examples.
+Check the [demo](demo) directory for usage examples.
 
 Development Status
 ==================
 
 Pre-alpha.
 
-The Ticker API is stable and working on MtGox, Bitcoin-24 and Bitstamp.
+The Ticker API is stable and working on:
 
-Discussion is in course in order to define the API features and interface.
-
-If you're a potential user of this API - your opinion matters, so feel free to join the discussion.
-Developers are welcome too, obviously
+ - ~~MtGox~~ (deprecated)
+ - ~~Bitcoin-24~~ (deprecated)
+ - Bitstamp
+ - Poloniex (including streaming API)
 
 Obtaining the latest source
 ===========================
