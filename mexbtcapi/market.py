@@ -9,7 +9,7 @@ from collections import defaultdict
 import copy
 import six
 
-from mexbtcapi.currency import ExchangeRate, Amount, Currency
+from mexbtcapi.currency import ExchangeRate, Amount, Currency, CurrencyPair
 from mexbtcapi import pubsub
 
 
@@ -33,13 +33,13 @@ class Order(object):
         self.entity = entity
         self._market = market
         self.timestamp = timestamp
+        self._sanity_check()
 
 
     def _sanity_check(self):
-        # pylint: disable=protected-access
         assert self.from_amount.value >= 0
         if self._market is not None:
-            self._market._order_sanity_check(self)
+            self._market.check_order_valid(self)
 
     @property
     def to_amount(self):
@@ -102,7 +102,6 @@ class Order(object):
         return "<{0}({1}, {2}, {3}, {4}>".format(self.__class__.__name__, self.from_amount, self.exchange_rate, self._market, self.timestamp)
 
     def __eq__(self, other):
-        # pylint: disable=protected-access
         if not isinstance(other, Order):
             return False
         return hash(self) == hash(other)
@@ -142,7 +141,7 @@ class Market(object):
 
     @property
     def currencies(self):
-        return (self.base_currency, self.counter_currency)
+        return CurrencyPair(self.base_currency, self.counter_currency)
 
     @property
     def full_name(self):
@@ -171,7 +170,7 @@ class Market(object):
         """returns a ActiveParticipant in this market"""
         raise NotImplementedError
 
-    def _order_sanity_check(self, order):
+    def check_order_valid(self, order):
         '''checks if an order is adequate in this market'''
         er = order.exchange_rate
         if order.market and order.market != self:
@@ -228,6 +227,17 @@ class MarketList(tuple):
             exchange_name_lower = exchange_name.lower() if exchange_name else None
             results &= self._by_exchange[exchange_name_lower]
         return MarketList(results)
+
+    def find_one(self, *args, **kwargs):
+        '''Calls find() with the same arguments, and returns one result.
+        Raises IndexError if find() doesn't return exactly one result'''
+        results = self.find(*args, **kwargs)
+        if len(results) == 0:
+            raise IndexError("No markets found for {} {}".format(args, kwargs))
+        if len(results) > 1:
+            raise IndexError("More than one market found for {} {}".format(args, kwargs))
+        assert len(results) == 1
+        return results[0]
 
     def __repr__(self):
         return "<{}({})>".format(self.__class__.__name__, list.__repr__(self))

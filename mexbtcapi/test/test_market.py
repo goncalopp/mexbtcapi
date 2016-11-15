@@ -43,9 +43,6 @@ def craft_market_order(amount, bid=True, market=m):
     from_c = market.counter_currency if bid else market.base_currency
     return Order(amount * from_c, market=market)
 
-def craft_state(bids_list, asks_list):
-    return MarketSimulationState(craft_orderbook(bids_list, asks_list))
-
 class MarketListTest(unittest.TestCase):
     def test_create(self):
         ml = MarketList([])
@@ -108,6 +105,17 @@ class MarketListTest(unittest.TestCase):
         self.assertItemsEqual(ml.find(c2).find(c3), [m2])
         self.assertItemsEqual(ml.find(c3).find(c3), [m2, m3])
         self.assertItemsEqual(ml.find(c3).find(c2), [m2])
+
+    def test_find_one(self):
+        c3, c4 = map(Currency, ('c3', 'c4'))
+        m1, m2 = SimpleMarket(c1, c2), SimpleMarket(c2, c3)
+        ml = MarketList([m1, m2])
+        self.assertEqual(ml.find_one(c1), m1)
+        #two results
+        self.assertRaises(IndexError, lambda: ml.find_one(c2))
+        self.assertEqual(ml.find_one(c3), m2)
+        #zero results
+        self.assertRaises(IndexError, lambda: ml.find_one(c4))
 
 class OrderbookTest(unittest.TestCase):
     def test_create(self):
