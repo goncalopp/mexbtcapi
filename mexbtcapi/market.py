@@ -11,6 +11,7 @@ import six
 
 from mexbtcapi.currency import ExchangeRate, Amount, Currency, CurrencyPair
 from mexbtcapi import pubsub
+from mexbtcapi.util import group_by
 
 
 class Order(object):
@@ -207,12 +208,8 @@ class MarketList(tuple):
         tuple.__init__(self, list_of_markets)
         assert all(isinstance(m, Market) for m in self)
         self._all = set(self)
-        self._by_currency = defaultdict(set)
-        self._by_exchange = defaultdict(set)
-        for market in self:
-            self._by_currency[market.base_currency].add(market)
-            self._by_currency[market.counter_currency].add(market)
-            self._by_exchange[market.exchange.name.lower()].add(market)
+        self._by_currency = group_by(self, lambda market: (market.base_currency, market.counter_currency), multi=True)
+        self._by_exchange = group_by(self, lambda market: market.exchange)
 
     def find(self, currency1=None, currency2=None, exchange_name=None):
         '''Returns a sublist of contained markets, filtered by the given criteria'''
