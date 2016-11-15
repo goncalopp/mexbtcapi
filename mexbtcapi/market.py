@@ -209,10 +209,11 @@ class MarketList(tuple):
         assert all(isinstance(m, Market) for m in self)
         self._all = set(self)
         self._by_currency = group_by(self, lambda market: (market.base_currency, market.counter_currency), multi=True)
-        self._by_exchange = group_by(self, lambda market: market.exchange)
+        self._by_exchange = group_by(self, lambda market: market.exchange.name.lower())
 
-    def find(self, currency1=None, currency2=None, exchange_name=None):
+    def find(self, currency1=None, currency2=None, exchange=None):
         '''Returns a sublist of contained markets, filtered by the given criteria'''
+        exchange_name = exchange.name if isinstance(exchange, Exchange) else exchange
         results = set(self._all) # make copy
         if currency1:
             currency1 = Currency(currency1)

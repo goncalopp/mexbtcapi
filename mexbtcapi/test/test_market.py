@@ -6,8 +6,8 @@ from mexbtcapi.currency import Currency
 
 class SimpleExchange(Exchange):
     '''A simple exchange class'''
-    def __init__(self):
-        Exchange.__init__(self, "SimpleExchange", MarketList([]))
+    def __init__(self, name="SimpleExchange"):
+        Exchange.__init__(self, name, MarketList([]))
 
 class SimpleMarket(Market):
     '''A simple market class'''
@@ -77,6 +77,7 @@ class MarketListTest(unittest.TestCase):
         self.assertItemsEqual(ml.find(c2, c3), [m2])
         self.assertItemsEqual(ml.find(c3, c2), [m2])
         self.assertItemsEqual(ml.find(c1, c3), [])
+        self.assertItemsEqual(ml.find(), [m1, m2, m3])
 
     def test_find_double(self):
         c3, c4 = (Currency(c) for c in ('c3', 'c4'))
@@ -116,6 +117,23 @@ class MarketListTest(unittest.TestCase):
         self.assertEqual(ml.find_one(c3), m2)
         #zero results
         self.assertRaises(IndexError, lambda: ml.find_one(c4))
+
+    def test_find_by_exchange(self):
+        e1, e2 = SimpleExchange("E1"), SimpleExchange("e2")
+        c3 = Currency('c3')
+        m1, m2= SimpleMarket(c1, c2, e1), SimpleMarket(c1, c2, e2)
+        ml = MarketList([m1, m2])
+        #simple find
+        self.assertItemsEqual(ml.find(exchange="E1"), (m1,))
+        #simple 2
+        self.assertItemsEqual(ml.find(exchange="E2"), (m2,))
+        #lower case
+        self.assertItemsEqual(ml.find(exchange="e1"), (m1,))
+        #with currency, 1 result
+        self.assertItemsEqual(ml.find(c1, exchange="E1"), (m1,))
+        #with currency, 0 results
+        self.assertItemsEqual(ml.find(c3, exchange="E1"), ())
+
 
 class OrderbookTest(unittest.TestCase):
     def test_create(self):
