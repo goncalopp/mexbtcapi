@@ -1,4 +1,5 @@
 '''Tests for market.py'''
+import types
 import unittest
 from mexbtcapi.market import Market, Exchange, Orderbook, Order, MarketList
 from mexbtcapi.currency import Currency
@@ -133,6 +134,15 @@ class MarketListTest(unittest.TestCase):
         self.assertItemsEqual(ml.find(c1, exchange="E1"), (m1,))
         #with currency, 0 results
         self.assertItemsEqual(ml.find(c3, exchange="E1"), ())
+
+    def test_repr(self):
+        ml = MarketList([m])
+        self.assertIsInstance(repr(ml), types.StringType)
+
+    def test_str(self):
+        ml = MarketList([m])
+        self.assertIsInstance(str(ml), types.StringType)
+
 
 
 class OrderbookTest(unittest.TestCase):

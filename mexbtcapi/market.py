@@ -238,7 +238,7 @@ class MarketList(tuple):
         return results[0]
 
     def __repr__(self):
-        return "<{}({})>".format(self.__class__.__name__, list.__repr__(self))
+        return "<{}({})>".format(self.__class__.__name__, tuple.__repr__(self))
 
 
 @six.add_metaclass(ABCMeta)
