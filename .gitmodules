@@ -1,0 +1,3 @@
+[submodule "mexbtcapi/api/poloniex/python-poloniex"]
+	path = mexbtcapi/api/poloniex/python-poloniex
+	url = https://github.com/s4w3d0ff/python-poloniex.git
