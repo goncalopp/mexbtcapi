@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
     name='mexbtcapi',
-    version='0.1',
+    version='0.2',
     description="The Multi-Exchange Bitcoin API",
     long_description=read('README.md'),
     author="Goncalo Pinheira",
