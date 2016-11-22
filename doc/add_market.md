@@ -13,7 +13,7 @@ Steps
   - The return of each function should be native python datatypes (int, string, etc).
   - If you're dealing with decimal (non-integer) numbers, you should NOT use float. Use string or Decimal instead (reasoning is provided below).
  - Write a separate (wrapper) module that uses your market API module and implements the MExBtcAPI interfaces
-  - You should familiarize yourself with the classes in the mexbtcapi/concepts directory first
+  - You should familiarize yourself with the classes in the currency.py and market.py directory first
   - If there's data or functionality that is exposed by MExBtcAPI but your market doesn't provide, a revision of the interfaces is probably in order - you should file a bug report for that.
 
 Why should I write two modules instead of only one?
