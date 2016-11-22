@@ -1,0 +1,12 @@
+# for coverage.py
+[run]
+branch = True
+source = mexbtcapi
+omit = mexbtcapi/api/poloniex/python-poloniex/*
+    mexbtcapi/api/*
+    */test/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    pass

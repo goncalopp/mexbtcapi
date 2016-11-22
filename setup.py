@@ -23,6 +23,8 @@ setup(
                       'requests', #for python-poloniex
                       'autobahn-sync', #for poloniex streaming api
                       ],
+    setup_requires = ['nose', 'mock'],
+    test_suite = 'nose.collector',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

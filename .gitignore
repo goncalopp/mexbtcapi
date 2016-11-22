@@ -1,3 +1,9 @@
 *.pyc
+tags
 mexbtcapi.egg-info/
 build/
+dist/
+.eggs
+.tox
+.coverage
+htmlcov

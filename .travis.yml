@@ -2,6 +2,11 @@ language: python
 python:
   - "2.7"
 # command to install dependencies
-install: "pip install . ; pip install nose"
+install:
+  - pip install .
+  - pip install coveralls
 # command to run tests
-script: nosetests
+script:
+  - python setup.py test
+  - coverage run setup.py test
+after_success: coveralls
