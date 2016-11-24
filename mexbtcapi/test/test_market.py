@@ -8,7 +8,11 @@ from mexbtcapi.currency import Currency
 class SimpleExchange(Exchange):
     '''A simple exchange class'''
     def __init__(self, name="SimpleExchange"):
-        Exchange.__init__(self, name, MarketList([]))
+        Exchange.__init__(self, name)
+
+    @property
+    def markets(self):
+        return MarketList(())
 
 class SimpleMarket(Market):
     '''A simple market class'''

@@ -4,13 +4,11 @@ This module exposes several classes related to currency markets
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from abc import ABCMeta, abstractmethod
-from collections import defaultdict
+from abc import ABCMeta, abstractmethod, abstractproperty
 import copy
 import six
 
 from mexbtcapi.currency import ExchangeRate, Amount, Currency, CurrencyPair
-from mexbtcapi import pubsub
 from mexbtcapi.util import group_by
 
 
@@ -129,16 +127,14 @@ class Market(object):
         '''raised when there's something wrong with an order, in this
         market's context'''
 
-    def __init__(self, exchange, counter_currency, base_currency, ticker_stream=None):
+    def __init__(self, exchange, counter_currency, base_currency):
         assert isinstance(exchange, Exchange)
         assert isinstance(counter_currency, Currency)
         assert isinstance(base_currency, Currency)
-        if ticker_stream is not None:
-            assert isinstance(ticker_stream, pubsub.Publisher)
         self.exchange = exchange
+        self.exchange_name = exchange.name
         self.base_currency = base_currency
         self.counter_currency = counter_currency
-        self._ticker_stream = ticker_stream
 
     @property
     def currencies(self):
@@ -157,9 +153,8 @@ class Market(object):
 
     @property
     def ticker_stream(self):
-        if self._ticker_stream is None:
-            raise NotImplementedError("This market doesn't provide a ticker stream api")
-        return self._ticker_stream
+        '''This method returns a pubsub.Publisher, or raises NotImplementedError'''
+        raise NotImplementedError("This market doesn't provide a ticker stream api")
 
     @abstractmethod
     def get_orderbook(self):
@@ -188,19 +183,45 @@ class Market(object):
     def __repr__(self):
         return "<{0}({1}, {2}, {3})>".format(self.__class__.__name__, self.exchange, self.counter_currency, self.base_currency)
 
+    def __eq__(self, other):
+        if not isinstance(other, Market):
+            return False
+        return hash(self) == hash(other)
+
+    def __ne__(self, other):
+        return not self == other #pylint: disable=unneeded-not
+
+    def __hash__(self):
+        return hash((self.exchange_name, self.currencies))
+
 @six.add_metaclass(ABCMeta)
 class Exchange(object):
     '''A currency exchange.
     It can expose several markets'''
-    def __init__(self, name, market_list):
+    def __init__(self, name):
         self.name = name
-        self.markets = MarketList(market_list)
+
+    @abstractproperty
+    def markets(self):
+        '''Returns a MarketList of all the markets in the exchange'''
+        raise NotImplementedError
 
     def __str__(self):
         return self.name
 
     def __repr__(self):
         return "<{0}({1})>".format(self.__class__.__name__, self.name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Market):
+            return False
+        return hash(self) == hash(other)
+
+    def __ne__(self, other):
+        return not self == other #pylint: disable=unneeded-not
+
+    def __hash__(self):
+        return hash(self.name)
 
 class MarketList(tuple):
     '''A searchable list of markets'''

@@ -3,7 +3,11 @@ from mexbtcapi.api.bitstamp.rest import CURRENCIES, BitstampMarket
 
 class BitstampExchange(Exchange):
     def __init__(self):
-        market_list = [BitstampMarket(self, currency) for currency in CURRENCIES]
-        Exchange.__init__(self, 'Bitstamp', market_list)
+        Exchange.__init__(self, 'Bitstamp')
+
+    @property
+    def markets(self):
+        return _markets
 
 exchange = BitstampExchange()
+_markets = MarketList(BitstampMarket(exchange, currency) for currency in CURRENCIES)

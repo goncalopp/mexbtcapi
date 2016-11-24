@@ -18,6 +18,10 @@ class PoloniexMarket(Market):
     def get_ticker(self):
         return rest.get_ticker(self)
 
+    @property
+    def ticker_stream(self):
+        return stream.get_ticker_stream_for_market(self.curr_code)
+
     def get_orderbook(self):
         return rest.get_orderbook(self)
 
@@ -26,10 +30,12 @@ class PoloniexMarket(Market):
 
 class PoloniexExchange(Exchange):
     def __init__(self):
-        markets = (PoloniexMarket(self, *cp) for cp in CURRENCY_PAIRS)
-        Exchange.__init__(self, 'Poloniex', markets)
+        Exchange.__init__(self, 'Poloniex')
+
+    @property
+    def markets(self):
+        return _markets
 
 exchange = PoloniexExchange()
+_markets = MarketList(PoloniexMarket(exchange, *cp) for cp in CURRENCY_PAIRS)
 stream.CURRENCY_PAIR_CODE_TO_MARKET = {m.curr_code:m for m in exchange.markets}
-for m in exchange.markets:
-    m._ticker_stream = stream.get_ticker_stream_for_market(m.curr_code)
