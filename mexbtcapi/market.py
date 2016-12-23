@@ -74,6 +74,12 @@ class Order(object):
         self_copy._sanity_check()
         return self_copy
 
+    def reverse(self):
+        '''Returns a new Order with same rate but swapped to and from amounts'''
+        if self.exchange_rate is None:
+            raise Exception("Can't reverse a market order")
+        return Order(self.to_amount, self.exchange_rate, market=self.market)
+
     @property
     def is_bid(self):
         '''returns True iff this order is buying the market's base currency
