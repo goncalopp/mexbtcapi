@@ -9,5 +9,8 @@ class BitstampExchange(Exchange):
     def markets(self):
         return _markets
 
+    def authenticate(*args, **kwargs):
+        raise NotImplementedError
+
 exchange = BitstampExchange()
 _markets = MarketList(BitstampMarket(exchange, currency) for currency in CURRENCIES)

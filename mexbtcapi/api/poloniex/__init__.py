@@ -1,8 +1,15 @@
 from . import rest, stream
 from .currencies import CURRENCY_PAIRS
-from mexbtcapi.market import Exchange, MarketList, Market
+from mexbtcapi.market import Credentials, Exchange, MarketList, Market, Wallet
 from mexbtcapi.currency import ExchangeRate
 
+class PoloniexCredentials(Credentials):
+    def __init__(self, api_key, api_secret):
+        self.api_key, self.api_secret = api_key, api_secret
+
+class PoloniexWallet(Wallet):
+    def get_balance(self):
+        curr_code = self.currency.name
 
 class PoloniexMarket(Market):
     def __init__(self, exchange, counter_currency, base_currency):
@@ -25,8 +32,9 @@ class PoloniexMarket(Market):
     def get_orderbook(self):
         return rest.get_orderbook(self)
 
-    def authenticate(self):
-        raise NotImplementedError
+    def authenticate(self, api_key, api_secret):
+        creds = PoloniexCredentials(api_key, api_secret)
+        return rest.PoloniexActiveParticipant(self, creds)
 
 class PoloniexExchange(Exchange):
     def __init__(self):
@@ -35,6 +43,10 @@ class PoloniexExchange(Exchange):
     @property
     def markets(self):
         return _markets
+
+    def authenticate(self, api_key, api_secret):
+        creds = PoloniexCredentials(api_key, api_secret)
+        return rest.PoloniexUser(self, creds)
 
 exchange = PoloniexExchange()
 _markets = MarketList(PoloniexMarket(exchange, *cp) for cp in CURRENCY_PAIRS)

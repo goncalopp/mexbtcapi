@@ -206,6 +206,11 @@ class Exchange(object):
         '''Returns a MarketList of all the markets in the exchange'''
         raise NotImplementedError
 
+    @abstractmethod
+    def authenticate(self, *args, **kwargs):
+        '''returns a authenticated User for this exchange'''
+        raise NotImplementedError
+
     def __str__(self):
         return self.name
 
@@ -223,8 +228,40 @@ class Exchange(object):
     def __hash__(self):
         return hash(self.name)
 
+@six.add_metaclass(ABCMeta)
+class Credentials(object):
+    '''Authentication credentials to identify a user of a Exchange or Market'''
+    pass
+
+@six.add_metaclass(ABCMeta)
+class Wallet(object):
+    '''A container of currency'''
+    def __init__(self, currency):
+        assert isinstance(currency, Currency)
+        self.currency = currency
+
+    @abstractmethod
+    def get_balance(self):
+        '''Returns an Amount representing the balance of the wallet'''
+        raise NotImplementedError
+
+@six.add_metaclass(ABCMeta)
+class User(object):
+    '''An authenticated user of a given exchange'''
+    def __init__(self, exchange, credentials):
+        assert isinstance(exchange, Exchange)
+        assert isinstance(credentials, Credentials)
+        self.exchange = exchange
+        self.credentials = credentials
+
+    @abstractmethod
+    def get_wallets(self):
+        '''Returns a dictionary of Currency:Wallet'''
+        raise NotImplementedError
+
+
 class MarketList(tuple):
-    '''A searchable list of markets'''
+    '''A immutable, searchable list of markets'''
     def __init__(self, list_of_markets):
         tuple.__init__(self, list_of_markets)
         assert all(isinstance(m, Market) for m in self)
@@ -293,6 +330,11 @@ class ActiveParticipant(Participant):
         """Occurs when the user is not authorized to do the requested operation
         """
         pass
+
+    def __init__(self, market, credentials):
+        Participant.__init__(self, market)
+        assert isinstance(credentials, Credentials)
+        self.credentials = credentials
 
     @abstractmethod
     def place_order(self, order):

@@ -10,8 +10,8 @@ import poloniex
 
 import mexbtcapi
 from .common import PoloniexTicker, rename_dict_keys
-from mexbtcapi.currency import Amount, CurrencyPair
-from mexbtcapi.market import Order, Orderbook
+from mexbtcapi.currency import Amount, Currency, CurrencyPair
+from mexbtcapi.market import ActiveParticipant, Order, Orderbook, User, Wallet
 
 TICKER_CACHE_TIMEOUT = datetime.timedelta(seconds=1)
 POLONIEX_FIELD_MAP = {'high24hr':'high', 'highestBid':'bid', 'low24hr':'low', 'lowestAsk':'ask'}
@@ -59,3 +59,49 @@ def get_orderbook(market):
     asks = [row_to_order(x, False) for x in data['asks']]
     return Orderbook(market, bids, asks)
 
+class PoloniexWallet(Wallet):
+    def __init__(self, currency, user):
+        Wallet.__init__(self, currency)
+        assert isinstance(user, PoloniexUser)
+        self.user = user
+
+    def get_balance(self):
+        return self.user.get_all_balances()[self.currency]
+
+class PoloniexUser(User):
+    def __init__(self, *args, **kwargs):
+        User.__init__(self, *args, **kwargs)
+        self.client = poloniex.Poloniex(self.credentials.api_key, self.credentials.api_secret)
+
+    def get_all_balances(self):
+        data = self.client.returnBalances()
+        amounts = [Amount(v, Currency(k)) for k, v in data.items()]
+        keyed_amounts = {a.currency : a for a in amounts}
+        return keyed_amounts
+
+    def get_wallets(self):
+        currencies = self.get_all_balances().keys()
+        return {c: PoloniexWallet(c, self) for c in currencies}
+
+class PoloniexActiveParticipant(ActiveParticipant):
+    def __init__(self, *args, **kwargs):
+        ActiveParticipant.__init__(self, *args, **kwargs)
+        self.client = poloniex.Poloniex(self.credentials.api_key, self.credentials.api_secret)
+
+    def place_order(self, order):
+        order = order.with_market(self.market)
+        method = self.client.buy if order.is_bid else self.client.sell
+        pair = order.market.curr_code
+        rate = order.rate.per(order.market.base_currency)
+        amount = rate.convert(order.from_amount, order.market.base_currency).value
+        response = method(pair, float(rate.rate), float(amount)) 
+        if 'error' in response:
+            raise Exception(response['error'])
+        return response
+
+    def cancel_order(self, order):
+        raise NotImplementedError
+
+    def get_open_orders(self):
+        raise NotImplementedError
+ 

@@ -14,6 +14,9 @@ class SimpleExchange(Exchange):
     def markets(self):
         return MarketList(())
 
+    def authenticate(*args, **kwargs):
+        raise NotImplementedError
+
 class SimpleMarket(Market):
     '''A simple market class'''
     def __init__(self, counter_currency, base_currency, exchange=None):

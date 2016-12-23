@@ -1,8 +1,12 @@
 import mexbtcapi
-from mexbtcapi.currencies import USD, BTC
+from mexbtcapi.currencies import USD, BTC, XMR
 
 print "A order is the intention to exchange two amounts of currency"
 
 print "If we want to exchange 10 dollars with 1 BTC, the order is "+str( 10*USD>>1*BTC )
 print "If we want to exchange 10 dollars at 3 USD/BTC, the order is "+str( 10*USD>>3*USD/BTC )
 print "If we want to exchange 10 dollars at whatever price (market order), we get "+str( 10*USD>>None )
+
+market = mexbtcapi.markets.find_one(BTC, XMR, 'poloniex')
+user = market.authenticate("API_KEY", "API_SECRET")
+user.place_order(0.001 * XMR >> 1000 * XMR / BTC)
