@@ -1,7 +1,8 @@
 '''Tests for market.py'''
+import datetime
 import types
 import unittest
-from mexbtcapi.market import Market, Exchange, Orderbook, Order, MarketList
+from mexbtcapi.market import Credentials, Exchange, Market, MarketList, Orderbook, Order, Ticker, User, Wallet
 from mexbtcapi.currency import Currency
 
 
@@ -32,8 +33,29 @@ class SimpleMarket(Market):
     def get_orderbook(self):
         raise NotImplementedError
 
+class SimpleWallet(Wallet):
+    def __init__(self, currency=None):
+        currency = currency or c1
+        Wallet.__init__(self, currency)
+
+    def get_balance(self):
+        return 1 * self.currency
+
+class SimpleCredentials(Credentials):
+    pass
+
+class SimpleUser(User):
+    def __init__(self, exchange=None, credentials=None):
+        exchange = exchange or test_exchange
+        credentials = credentials or test_credentials
+        User.__init__(self, exchange, credentials)
+
+    def get_wallets(self):
+        return {c1: SimpleWallet(c1)}
+
 #GLOBALS
 test_exchange = SimpleExchange()
+test_credentials = SimpleCredentials()
 c1, c2 = Currency("c1"), Currency("c2")
 m = SimpleMarket(c1, c2)
 
@@ -50,6 +72,53 @@ def craft_order(amount, rate, bid=True, market=m):
 def craft_market_order(amount, bid=True, market=m):
     from_c = market.counter_currency if bid else market.base_currency
     return Order(amount * from_c, market=market)
+
+def craft_ticker(bid=1, ask=2):
+    ticker = Ticker(m, datetime.datetime.now(), bid=bid*c1/c2, ask=ask*c1/c2)
+    return ticker
+
+
+class OrderTest(unittest.TestCase):
+    def test_reverse(self):
+        order = craft_order(2, 4)
+        self.assertEqual(order.from_amount.value, 2)
+        self.assertEqual(order.from_amount.currency, c1)
+        self.assertEqual(order.to_amount.value, 0.5)
+        self.assertEqual(order.to_amount.currency, c2)
+        self.assertEqual(order.rate.rate, 4)
+        rev = order.reverse()
+        self.assertEqual(rev.from_amount.value, 0.5)
+        self.assertEqual(rev.from_amount.currency, c2)
+        self.assertEqual(rev.to_amount.value, 2)
+        self.assertEqual(rev.to_amount.currency, c1)
+        self.assertEqual(rev.rate.rate, 4)
+
+    def test_str_repr(self):
+        order = craft_order(2, 4)
+        self.assertIsInstance(str(order), str)
+        self.assertIsInstance(repr(order), str)
+        order = Order(1*c1, None)
+        self.assertIsInstance(str(order), str)
+        self.assertIsInstance(repr(order), str)
+
+    def test_eq(self):
+        o1 = craft_order(2, 4)
+        o2 = craft_order(2, 4)
+        o3 = craft_order(2, 5)
+        self.assertEqual(o1, o2)
+        self.assertNotEqual(o1, o3)
+        self.assertNotEqual(o1, "")
+
+class MarketTest(unittest.TestCase):
+    def test_eq(self):
+        m1 = SimpleMarket(c1, c2)
+        m2 = SimpleMarket(c1, c2)
+        m3 = SimpleMarket(c1, c2, exchange=SimpleExchange(name="x"))
+        m4 = SimpleMarket(c2, c1)
+        self.assertEqual(m1, m2)
+        self.assertNotEqual(m1, m3)
+        self.assertNotEqual(m1, m4)
+        self.assertNotEqual(m1, None)
 
 class MarketListTest(unittest.TestCase):
     def test_create(self):
@@ -150,8 +219,6 @@ class MarketListTest(unittest.TestCase):
         ml = MarketList([m])
         self.assertIsInstance(str(ml), types.StringType)
 
-
-
 class OrderbookTest(unittest.TestCase):
     def test_create(self):
         orderbook = craft_orderbook([], [])
@@ -159,6 +226,49 @@ class OrderbookTest(unittest.TestCase):
         craft_orderbook([(3, 3), (3, 2)], [(3, 4), (3, 5)])
         self.assertIsInstance(orderbook, Orderbook)
 
+class ExchangeTest(unittest.TestCase):
+    def test_str(self):
+        self.assertIsInstance(str(test_exchange), str)
+        self.assertIsInstance(repr(test_exchange), str)
+
+    def test_eq(self):
+        e1 = SimpleExchange(name="a")
+        e2 = SimpleExchange(name="a")
+        e3 = SimpleExchange(name="b")
+        self.assertEqual(e1, e2)
+        self.assertNotEqual(e1, e3)
+        self.assertNotEqual(e1, None)
+
+class TickerTest(unittest.TestCase):
+    def test_create(self):
+        ticker = craft_ticker()
+        self.assertIsInstance(ticker, Ticker)
+
+    def test_str(self):
+        ticker = craft_ticker()
+        self.assertIsInstance(str(ticker), str)
+        self.assertIsInstance(repr(ticker), str)
+
+class UserTest(unittest.TestCase):
+    def test_create(self):
+        user = SimpleUser()
+        self.assertIsInstance(user, User)
+
+    def test_get_wallets(self):
+        user = SimpleUser()
+        wallets = user.get_wallets()
+        wallet = wallets[c1]
+        self.assertIsInstance(wallet, Wallet)
+
+class WalletTest(unittest.TestCase):
+    def test_create(self):
+        wallet = SimpleWallet(c1)
+        self.assertIsInstance(wallet, Wallet)
+
+    def test_get_balance(self):
+        wallet = SimpleWallet(c1)
+        balance = wallet.get_balance()
+        self.assertEqual(balance, 1*c1)
 
 if __name__ == '__main__':
     unittest.main()

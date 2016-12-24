@@ -3,10 +3,13 @@ import unittest
 from decimal import Decimal
 from mexbtcapi.currency import Currency, ExchangeRate, Amount, CurrencyPair
 
-class CurrencytTest(unittest.TestCase):
+class CurrencyTest(unittest.TestCase):
     def test_create(self): 
         c1 = Currency("c1")
         self.assertIsInstance(c1, Currency)
+        c1 = Currency(c1)
+        self.assertIsInstance(c1, Currency)
+        self.assertRaises(Exception, lambda: Currency(1))
 
     def test_equality(self):
         c1, c1_, c2 = Currency("c1"), Currency("c1"), Currency("c2") 
@@ -20,11 +23,26 @@ class CurrencytTest(unittest.TestCase):
         self.assertEqual(len({c1:1, c2:1}), 2)
         self.assertEqual(len({c1:1, "c1":1}), 2)
 
+    def test_mul(self):
+        c1 = Currency("c1")
+        self.assertEqual(1 * c1, Amount(1, c1))
+        self.assertRaises(TypeError, lambda: c1 * 1) 
+        self.assertRaises(ValueError, lambda: "" * c1) 
+
+    def test_div(self):
+        c1, c2 = Currency("c1"), Currency("c2")
+        self.assertEqual(c1 / c2, ExchangeRate(c1, c2, 1))
+        self.assertEqual(5 * c1 / c2, ExchangeRate(c1, c2, 5))
+        self.assertRaises(TypeError, lambda: c1 / 1) 
+        self.assertRaises(TypeError, lambda: 1 / c1) 
+
 class CurrencyPairTest(unittest.TestCase):
-    @staticmethod
-    def create_pair():
-        c1, c2, c3 = Currency("c1"), Currency("c2"), Currency("c3")
-        p1, p1_, p2, p3= CurrencyPair(c1,c2), CurrencyPair(c1,c3)
+    def test_create(self):
+        c1, c2= Currency("c1"), Currency("c2")
+        pair = CurrencyPair(c1,c2)
+        self.assertIsInstance(pair, CurrencyPair)
+        self.assertRaises(Exception, lambda: CurrencyPair(c1, c1))
+
 
     def test_equality(self):
         c1, c1_, c2, c3 = Currency("c1"), Currency("c1"), Currency("c2"), Currency("c3")
@@ -32,10 +50,35 @@ class CurrencyPairTest(unittest.TestCase):
         self.assertEqual(p1,p1_)
         self.assertNotEqual(p1,p2)
         self.assertNotEqual(p1,p3)
+        self.assertRaises(Exception, lambda: p1=="")
 
     def test_equality_reversed(self):
         c1, c2 = Currency("c1"), Currency("c2")
         self.assertNotEqual(CurrencyPair(c1,c2), CurrencyPair(c2, c1))
+
+    def test_common_currency(self):
+        c1, c2, c3, c4 = Currency("c1"), Currency("c2"), Currency("c3"), Currency("c4")
+        p1, p2, p3, p4 = CurrencyPair(c1,c2), CurrencyPair(c1,c3), CurrencyPair(c3,c2), CurrencyPair(c3,c4)
+        self.assertEqual(p1.common_currency(p2), c1)
+        self.assertEqual(p1.common_currency(p3), c2)
+        # two common currencies
+        self.assertRaises(CurrencyPair.WrongCurrency, lambda: p1.common_currency(p1))
+        # no common currency
+        self.assertRaises(CurrencyPair.WrongCurrency, lambda: p1.common_currency(p4))
+
+    def test_other_currency(self):
+        c1, c2, c3, c4 = Currency("c1"), Currency("c2"), Currency("c3"), Currency("c4")
+        p1, p2, p3, p4 = CurrencyPair(c1,c2), CurrencyPair(c1,c3), CurrencyPair(c3,c2), CurrencyPair(c3,c4)
+        self.assertEqual(p1.other_currency(c1), c2)
+        self.assertEqual(p1.other_currency(c2), c1)
+        # currency doesn't belong to pair
+        self.assertRaises(CurrencyPair.WrongCurrency, lambda: p1.other_currency(c3))
+
+    def test_str(self):
+        c1, c2 = Currency("c1"), Currency("c2")
+        p1 = CurrencyPair(c1,c2)
+        self.assertIsInstance(str(p1), str)
+        self.assertIsInstance(repr(p1), str)
 
     def test_hash(self):
         c1, c1_, c2 = Currency("c1"), Currency("c1"), Currency("c2")
@@ -89,6 +132,29 @@ class AmountTest(unittest.TestCase):
         self.assertNotEqual(total_float, 1.0)
         self.assertEqual(total_amount, 1*c1)
 
+    def test_add(self):
+        c1, c2, amount = self.create_amount()
+        self.assertEqual(amount + amount, 2 * c1)
+        amount+= amount
+        self.assertEqual(amount, 2 * c1)
+        self.assertEqual(amount + 1, 3 * c1)
+        # Fails when adding a Amount with other currency
+        self.assertRaises(Exception, lambda: amount + 1 * c2)
+
+    def test_mul(self):
+        c1, c2, amount = self.create_amount()
+        self.assertEqual(amount * 2, 2 * c1)
+        amount*= 2
+        self.assertEqual(amount, 2 * c1)
+        # Fails when multiplying with an amount
+        self.assertRaises(Exception, lambda: amount * amount)
+
+    def test_div(self):
+        c1, c2, amount = self.create_amount()
+        self.assertEqual(amount / 2, '0.5' * c1)
+        amount/= 2
+        self.assertEqual(amount, '0.5' * c1)
+        self.assertIsInstance(amount / (2 * c2), ExchangeRate)
 
 class ExchangeRateTest(unittest.TestCase):
     @staticmethod

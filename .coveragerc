@@ -10,3 +10,4 @@ omit = mexbtcapi/api/poloniex/python-poloniex/*
 exclude_lines =
     pragma: no cover
     pass
+    NotImplementedError

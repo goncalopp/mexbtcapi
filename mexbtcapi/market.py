@@ -178,9 +178,7 @@ class Market(object):
         if order.market and order.market != self:
             raise self.InvalidOrder("Order on different market")
         if er is not None:
-            try:
-                assert set(er.currencies) == set(self.currencies)
-            except AssertionError:
+            if set(er.currencies) != set(self.currencies):
                 raise self.InvalidOrder("Invalid order exchange rate")
 
     def __str__(self):
@@ -224,7 +222,7 @@ class Exchange(object):
         return "<{0}({1})>".format(self.__class__.__name__, self.name)
 
     def __eq__(self, other):
-        if not isinstance(other, Market):
+        if not isinstance(other, Exchange):
             return False
         return hash(self) == hash(other)
 

@@ -54,11 +54,6 @@ class Currency(object):
             return ExchangeRate(other, self, 1)
         raise TypeError("Can't divide a Currency by a "+str(type(other)))
 
-    def __rdiv__(self, other):
-        if isinstance(other, Amount):
-            return ExchangeRate(self, other.currency, other.value)
-        raise TypeError("Can't divide a "++str(type(other))+" by a Currency")
-
 class CurrencyPair(object):
     class WrongCurrency(Exception):
         '''Raised when a CurrencyPair was asked to handle a currency it can't'''
@@ -228,45 +223,12 @@ class ExchangeRate(object):
         # returns a copy of this ExchangeRate
         return ExchangeRate(self._currencies[0], self._currencies[1], self._rate)
 
-    def __iadd__(self, other):
-        if isinstance(other, ExchangeRate):
-            if self._currencies != other._currencies:
-                raise ValueError("Can't sum two ExchangeRate with " + \
-                             "different currencies")
-            self._rate += other._rate
-        else:
-            raise ValueError("Can't sum ExchangeRate to ", type(other))
-        return self
-
-    def __add__(self, other):
-        a = self.clone()
-        a += other
-        return a
-
-    def __neg__(self):
-        a = self.clone()
-        a._rate = -a._rate
-        return a
-
-    def __isub__(self, other):
-        self += -other
-        return self
-
-    def __sub__(self, other):
-        a = self.clone() + (-other)
-        return a
-
-
 class Amount(object):
     """An amount of  a given currency"""
 
     def __init__(self, value, currency):
         self.value = convert_to_decimal(value, frac=True)
         self.currency = currency
-
-    def convert(self, currencyequivalence, to_currency):
-        if self.currency != to_currency:
-            currencyequivalence.convert(self)
 
     def clone(self):
         # returns a copy of this amount
