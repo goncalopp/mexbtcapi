@@ -50,7 +50,7 @@ class CurrencyPairTest(unittest.TestCase):
         self.assertEqual(p1,p1_)
         self.assertNotEqual(p1,p2)
         self.assertNotEqual(p1,p3)
-        self.assertRaises(Exception, lambda: p1=="")
+        self.assertNotEqual(p1, "")
 
     def test_equality_reversed(self):
         c1, c2 = Currency("c1"), Currency("c2")

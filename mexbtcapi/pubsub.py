@@ -1,8 +1,6 @@
 '''This module implements publisher-subscriber functionality'''
 
-from abc import ABCMeta, abstractmethod
 import logging
-import six
 log = logging.getLogger(__name__)
 
 
@@ -45,11 +43,11 @@ class Publisher(object):
         if stopping:
             self._stop()
 
-    def add_start_callback(self, f):
-        self._start_callbacks.append(f)
+    def add_start_callback(self, func):
+        self._start_callbacks.append(func)
 
-    def add_stop_callback(self, f):
-        self._stop_callbacks.append(f)
+    def add_stop_callback(self, func):
+        self._stop_callbacks.append(func)
 
     @property
     def num_subscriptions(self):
@@ -61,21 +59,20 @@ class Publisher(object):
         subscriptions = tuple(self._active_subscriptions) # make a copy, as original might be modified while running
         for subscription in subscriptions:
             subscription.send(message)
-    
+
     @property
     def active(self):
         return self._active
 
     def _start(self):
         self._active = True
-        for f in self._start_callbacks:
-            f()
+        for func in self._start_callbacks:
+            func()
 
     def _stop(self):
         self._active = False
-        for f in self._stop_callbacks:
-            f()
-
+        for func in self._stop_callbacks:
+            func()
 
 class Subscription(object):
     '''This class represents an association between a Publisher and a subscriber.
@@ -118,10 +115,12 @@ class TopicPublisher(Publisher):
         Publisher.__init__(self)
 
 class MultitopicPublisher(Publisher):
+    '''A Publisher that exposes several "topics".
+    Each topic is a independent stream of events'''
     ALL_TOPICS = '[ALL TOPICS]'
     def __init__(self):
         Publisher.__init__(self)
-        self._topic_to_sub= {} # subscriptions from TopicPublisher to self
+        self._topic_to_sub = {} # subscriptions from TopicPublisher to self
         self._topic_to_sub[self.ALL_TOPICS] = Subscription(self, TopicPublisher(self.ALL_TOPICS))
 
 

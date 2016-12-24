@@ -38,7 +38,7 @@ class Currency(object):
         return self.name == other.name
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
     def __hash__(self):
         return hash(self.name)
@@ -55,6 +55,7 @@ class Currency(object):
         raise TypeError("Can't divide a Currency by a "+str(type(other)))
 
 class CurrencyPair(object):
+    '''A pair of currencies'''
     class WrongCurrency(Exception):
         '''Raised when a CurrencyPair was asked to handle a currency it can't'''
         def __init__(self, currency_pair, other_currency, message=None):
@@ -105,16 +106,15 @@ class CurrencyPair(object):
         return CurrencyPair(self.currencies[1], self.currencies[0])
 
     def __eq__(self, other):
-        e = ValueError("can't compare the two values: {}, {}".format(self, other))
         if not isinstance(other, CurrencyPair):
-            raise e
+            return False
         return self.currencies == other.currencies
 
     def __hash__(self):
         return hash(self.currencies)
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
 
 class ExchangeRate(object):
@@ -161,8 +161,8 @@ class ExchangeRate(object):
             currency = self._currencies.other_currency(amount.currency)
         if currency == amount.currency:
             return amount
-        exchange_rate = self if not self._isDenominator(currency) else self.reverse()
-        return Amount(amount.value * exchange_rate._rate, currency)
+        exchange_rate = self if not self._is_denominator(currency) else self.reverse()
+        return Amount(amount.value * exchange_rate.rate, currency)
 
     def reverse(self):
         '''returns a ExchangeRate with swapped currencies order.
@@ -180,9 +180,9 @@ class ExchangeRate(object):
             er_a = er_a.reverse()
         if common_currency != er_b.numerator:
             er_b = er_b.reverse()
-        return ExchangeRate(er_a._currencies[0], er_b._currencies[1], er_b._rate * er_a._rate)
+        return ExchangeRate(er_a.currencies[0], er_b.currencies[1], er_b.rate * er_a.rate)
 
-    def _isDenominator(self, currency):
+    def _is_denominator(self, currency):
         '''returns if currency is the denominator.
         Throws exception is the currency does not belong to this ExchangeRate'''
         return not self._currencies.is_first(currency)
@@ -194,20 +194,20 @@ class ExchangeRate(object):
 
     def per(self, currency):
         '''gives the ExchangeRate with currency as the denominator.'''
-        return self if self._isDenominator(currency) else self.reverse()
+        return self if self._is_denominator(currency) else self.reverse()
 
     def by(self, currency):
         '''gives the ExchangeRate with currency as the numerator.'''
-        return self if not self._isDenominator(currency) else self.reverse()
+        return self if not self._is_denominator(currency) else self.reverse()
 
     def __cmp__(self, other):
-        e = ValueError("can't compare the two values: {}, {}".format(self, other))
+        err = ValueError("can't compare the two values: {}, {}".format(self, other))
         if not isinstance(other, ExchangeRate):
-            raise e
+            raise err
         if self.currencies == other.currencies.reverse():
             other = other.reverse()
         if self.currencies != other.currencies:
-            raise e
+            raise err
         return cmp(self.rate, other.rate)
 
     def __hash__(self):
@@ -241,7 +241,7 @@ class Amount(object):
         return "{0:.5f} {1}".format(float(self.value), self.currency)
 
     def __iadd__(self, other):
-        if type(other) in (int, float) or isinstance(other, Decimal):
+        if isinstance(other, (int, float, Decimal)):
             self.value += other
         elif isinstance(other, Amount):
             if self.currency != other.currency:
@@ -253,22 +253,22 @@ class Amount(object):
         return self
 
     def __add__(self, other):
-        a = self.clone()
-        a += other
-        return a
+        am = self.clone()
+        am += other
+        return am
 
     def __neg__(self):
-        a = self.clone()
-        a.value = -a.value
-        return a
+        am = self.clone()
+        am.value = -am.value
+        return am
 
     def __isub__(self, other):
         self += -other
         return self
 
     def __sub__(self, other):
-        a = self.clone() + (-other)
-        return a
+        am = self.clone() + (-other)
+        return am
 
     def __imul__(self, other):
         if isinstance(other, (int, float, long, Decimal)):
@@ -278,9 +278,9 @@ class Amount(object):
         return self
 
     def __mul__(self, other):
-        a = self.clone()
-        a *= other
-        return a
+        am = self.clone()
+        am *= other
+        return am
 
     def __div__(self, other):
         '''doubles as ExchangeRate constructor'''
@@ -289,9 +289,9 @@ class Amount(object):
         if isinstance(other, Amount):
             return ExchangeRate.from_amounts(self, other)
         else:
-            a = self.clone()
-            a /= other
-            return a
+            am = self.clone()
+            am /= other
+            return am
 
     def __idiv__(self, other):
         if isinstance(other, (int, float, long, Decimal)):
@@ -314,7 +314,7 @@ class Amount(object):
         if not other:
             other = None
         if other is None or isinstance(other, ExchangeRate):
-            from market import Order
+            from mexbtcapi.market import Order
             return Order(self, other)
         raise ValueError("Can't shift {0} by {1}".format(self, other))
 
