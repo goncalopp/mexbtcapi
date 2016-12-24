@@ -15,8 +15,13 @@ Features
 
 * Multi-currency support
 * Multi-exchange support
+* Object-oriented API
 * Seamless non-blocking streaming API support (websockets, WAMP)
 
+Usage / docs
+============
+
+Check the [demo](demo) directory for usage examples.
 
 Supported Exchanges
 ===================
@@ -45,21 +50,9 @@ Donations of bitcoin are kindly accepted at **1NBmTawDXqj8mNzGZSTzS1qmeyBhNideTM
 
 ![Donation QR](donation_qrcode.png)
 
-Usage / docs
-============
-
-Check the [demo](demo) directory for usage examples.
-
-Development Status
-==================
-
-The ticker and orderbook APIs are stable.
-The Order API is missing
-
 Obtaining the latest source
 ===========================
 https://github.com/goncalopp/mexbtcapi
-
 
 Adding suport for a new exchange
 ================================
