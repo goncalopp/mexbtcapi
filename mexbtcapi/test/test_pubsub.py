@@ -5,7 +5,7 @@ import unittest
 from mock import MagicMock
 import random
 
-from mexbtcapi.pubsub import Publisher, Subscription, MultitopicPublisher
+from mexbtcapi.pubsub import Publisher, ChildPublisher, Subscription, TopicPublisher, ALL_TOPICS
 
 #make tests deterministic
 random.seed(0)
@@ -162,16 +162,14 @@ class PublisherTest(unittest.TestCase):
         subscription2.stop()
         self.assertEqual(p.active, False)
 
-class PublisherNestedTest(unittest.TestCase):
+class ChildPublisherTest(unittest.TestCase):
     def test_nested_simple(self):
         np1_sub1 = MagicMock()
         np1_sub2 = MagicMock()
         np2_sub1 = MagicMock()
         p = Publisher()
-        np1 = Publisher()
-        np2 = Publisher()
-        np1_subs = p.subscribe(np1, start=False)
-        np2_subs = p.subscribe(np2, start=False)
+        np1 = ChildPublisher(p)
+        np2 = ChildPublisher(p)
         self.assertEqual(p.active, False)
         self.assertEqual(np1.active, False)
         self.assertEqual(np2.active, False)
@@ -247,12 +245,12 @@ class PublisherNestedTest(unittest.TestCase):
         self.assertEqual(np1_sub2.call_count, 3)
         self.assertEqual(np2_sub1.call_count, 1)
 
-class MultitopicPublisherTest(unittest.TestCase):
+class TopicPublisherTest(unittest.TestCase):
     def test_simple(self):
         c1_sub1 = MagicMock()
         c1_sub2 = MagicMock()
         c2_sub1 = MagicMock()
-        p = MultitopicPublisher()
+        p = TopicPublisher()
         self.assertEqual(p.active, False)
         #send messages to random topics
         p.send(9, "c1")
@@ -326,7 +324,7 @@ class MultitopicPublisherTest(unittest.TestCase):
         subscribers = [MagicMock() for x in range(n_subscribers)]
         unjoined = set(subscribers)
         joined = set()
-        p = MultitopicPublisher()
+        p = TopicPublisher()
         topic_subs = defaultdict(set)
         sub_topic = {}
         subscriptions = {} #keyed by subscriber
@@ -370,11 +368,11 @@ class MultitopicPublisherTest(unittest.TestCase):
         c1_sub = MagicMock()
         c2_sub = MagicMock()
         all_sub = MagicMock()
-        p = MultitopicPublisher()
+        p = TopicPublisher()
         #subscribe
         c1_sub_subs = p.subscribe(c1_sub, "c1")
         c2_sub_subs = p.subscribe(c2_sub, "c2")
-        all_sub_subs = p.subscribe(all_sub, MultitopicPublisher.ALL_TOPICS)
+        all_sub_subs = p.subscribe(all_sub, ALL_TOPICS)
         #send message to c1
         p.send(1, "c1")
         c1_sub.assert_called_with(1)
@@ -395,13 +393,13 @@ class MultitopicPublisherTest(unittest.TestCase):
         c1_sub = MagicMock()
         c2_sub = MagicMock()
         all_sub = MagicMock()
-        p = MultitopicPublisher()
+        p = TopicPublisher()
         #subscribe
         c1_sub_subs = p.subscribe(c1_sub, "c1")
         c2_sub_subs = p.subscribe(c2_sub, "c2")
-        all_sub_subs = p.subscribe(all_sub, MultitopicPublisher.ALL_TOPICS)
+        all_sub_subs = p.subscribe(all_sub, ALL_TOPICS)
         #send message to ALL_TOPICS
-        p.send(1,MultitopicPublisher.ALL_TOPICS)
+        p.send(1,ALL_TOPICS)
         c1_sub.assert_called_with(1)
         c2_sub.assert_called_with(1)
         all_sub.assert_called_with(1)
@@ -409,7 +407,7 @@ class MultitopicPublisherTest(unittest.TestCase):
         self.assertEqual(c2_sub.call_count, 1)
         self.assertEqual(all_sub.call_count, 1)
         #send message to ALL_TOPICS
-        p.send(2, MultitopicPublisher.ALL_TOPICS)
+        p.send(2, ALL_TOPICS)
         c1_sub.assert_called_with(2)
         c2_sub.assert_called_with(2)
         all_sub.assert_called_with(2)

@@ -20,7 +20,7 @@ class PoloniexCombinedStream(object):
         self.app = AutobahnSync()
         self.url = url
         # each ticker_stream topic is a currency pair
-        self.ticker_stream = pubsub.MultitopicPublisher() 
+        self.ticker_stream = pubsub.TopicPublisher()
         self.ticker_stream.add_start_callback( lambda : self.start_substream('ticker') )
         self.ticker_stream.add_stop_callback( lambda : self.stop_substream('ticker') )
 
@@ -65,11 +65,8 @@ poloniex_stream = PoloniexCombinedStream(WEBSOCKET_URL)
 ticker_stream = poloniex_stream.ticker_stream
 
 def get_ticker_stream_for_market(currency_pair_code):
-    subs = ticker_stream._get_or_create_topic_subscription(currency_pair_code)
-    assert isinstance(subs, pubsub.Subscription)
-    assert subs.publisher is ticker_stream
-    assert isinstance(subs.subscriber, pubsub.Publisher)
-    return subs.subscriber
+    pub = pubsub.ChildPublisher(ticker_stream, topic=currency_pair_code)
+    return pub
 
 def subscriber_callback(data):
     pass
