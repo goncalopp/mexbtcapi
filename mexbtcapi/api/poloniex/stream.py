@@ -47,10 +47,8 @@ class PoloniexCombinedStream(object):
 
     def ticker_callback(self, *data):
         try:
-            if CURRENCY_PAIR_CODE_TO_MARKET is None:
-                raise Exception("You need to set CURRENCY_PAIR_CODE_TO_MARKET")
             currency_pair_code, last, ask, bid, percent_change, base_volume, quote_volume, is_frozen, high, low = data
-            market = CURRENCY_PAIR_CODE_TO_MARKET[currency_pair_code]
+            market = get_market_from_curr_pair_code(currency_pair_code)
             time = datetime.datetime.now()
             ticker_data={"bid":bid, "ask":ask, "last":last, "high":high, "low":low}
             ticker = PoloniexTicker.from_data(ticker_data, market)
@@ -63,6 +61,14 @@ class PoloniexCombinedStream(object):
 
 poloniex_stream = PoloniexCombinedStream(WEBSOCKET_URL)
 ticker_stream = poloniex_stream.ticker_stream
+
+def get_market_from_curr_pair_code(curr_pair_code):
+    if CURRENCY_PAIR_CODE_TO_MARKET is None:
+        raise Exception("You need to set CURRENCY_PAIR_CODE_TO_MARKET")
+    market = CURRENCY_PAIR_CODE_TO_MARKET.get(curr_pair_code, None)
+    if market is None:
+        raise Exception("Can't find market for {}. You may want to refresh the market list".format(curr_pair_code))
+    return market
 
 def get_ticker_stream_for_market(currency_pair_code):
     pub = pubsub.ChildPublisher(ticker_stream, topic=currency_pair_code)

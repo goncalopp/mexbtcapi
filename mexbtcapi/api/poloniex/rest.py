@@ -1,11 +1,14 @@
 import datetime
 import importlib
 import os
+import logging
+log = logging.getLogger(__name__)
 
 #dynamically load the python-poloniex module
 import sys
 this_module_dir = os.path.dirname(__file__)
 sys.path.append(os.path.join(this_module_dir, 'python-poloniex'))
+from cached_property import cached_property_with_ttl
 import poloniex
 
 import mexbtcapi
@@ -29,21 +32,20 @@ def get_all_currency_pairs():
     pairs = [CurrencyPair(t[0], t[1]) for t in tuples]
     return pairs
 
-def get_global_ticker():
-    '''Poloniex only method for getting a ticker returns it for all currencies.
-    In order to avoid wasting resources, this acts as a cache'''
-    global ticker_cache, ticker_cache_updated
-    now = datetime.datetime.now()
-    if ticker_cache is None or (now-ticker_cache_updated) > TICKER_CACHE_TIMEOUT:
-        ticker_cache = client.returnTicker()
-        ticker_cache_updated = datetime.datetime.now()
-    return ticker_cache, ticker_cache_updated
+class CachedRest(object):
+    @cached_property_with_ttl(ttl=1.0)
+    def global_ticker(self):
+        '''Poloniex only method for getting a ticker returns it for all currencies.'''
+        logging.info("Calling returnTicker")
+        return client.returnTicker()
+
+
 
 def get_ticker(market):
-    ticker, update_time = get_global_ticker()
+    ticker = cached_rest.global_ticker
     cticker = ticker[market.curr_code]
     data = rename_dict_keys(cticker, POLONIEX_FIELD_MAP)
-    time = update_time #no datetime on response, unfortunately
+    time = datetime.datetime.now() #no datetime on response, unfortunately
     return PoloniexTicker.from_data(data, market, time)
 
 def get_orderbook(market):
@@ -66,21 +68,23 @@ class PoloniexWallet(Wallet):
         self.user = user
 
     def get_balance(self):
-        return self.user.get_all_balances()[self.currency]
+        return self.user.all_balances[self.currency]
 
 class PoloniexUser(User):
     def __init__(self, *args, **kwargs):
         User.__init__(self, *args, **kwargs)
         self.client = poloniex.Poloniex(self.credentials.api_key, self.credentials.api_secret)
 
-    def get_all_balances(self):
+    @cached_property_with_ttl(ttl=1.0)
+    def all_balances(self):
+        logging.info("Calling returnBalances")
         data = self.client.returnBalances()
         amounts = [Amount(v, Currency(k)) for k, v in data.items()]
         keyed_amounts = {a.currency : a for a in amounts}
         return keyed_amounts
 
     def get_wallets(self):
-        currencies = self.get_all_balances().keys()
+        currencies = self.all_balances.keys()
         return {c: PoloniexWallet(c, self) for c in currencies}
 
 class PoloniexActiveParticipant(ActiveParticipant):
@@ -89,6 +93,8 @@ class PoloniexActiveParticipant(ActiveParticipant):
         self.client = poloniex.Poloniex(self.credentials.api_key, self.credentials.api_secret)
 
     def place_order(self, order):
+        if order.rate is None:
+            raise Exception("Poloniex doesn't support market orders, only limit orders")
         order = order.with_market(self.market)
         method = self.client.buy if order.is_bid else self.client.sell
         pair = order.market.curr_code
@@ -105,3 +111,4 @@ class PoloniexActiveParticipant(ActiveParticipant):
     def get_open_orders(self):
         raise NotImplementedError
  
+cached_rest = CachedRest()

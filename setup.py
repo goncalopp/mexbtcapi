@@ -19,9 +19,10 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-                      'six',
-                      'requests', #for python-poloniex
-                      'autobahn-sync', #for poloniex streaming api
+                      'six',                #for python2/3 compatibility
+                      'requests',           #for python-poloniex
+                      'autobahn-sync',      #for poloniex streaming api
+                      'cached-property',    #for caching HTTP requests
                       ],
     setup_requires = ['nose', 'mock'],
     test_suite = 'nose.collector',

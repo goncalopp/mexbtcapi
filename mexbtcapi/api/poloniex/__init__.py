@@ -1,5 +1,4 @@
-from . import rest, stream
-from .currencies import CURRENCY_PAIRS
+from . import currencies, rest, stream
 from mexbtcapi.market import Credentials, Exchange, MarketList, Market, Wallet
 from mexbtcapi.currency import ExchangeRate
 
@@ -45,6 +44,7 @@ class PoloniexExchange(Exchange):
 
     @property
     def markets(self):
+        global _markets
         return _markets
 
     def create_credentials(self, api_key, api_secret):
@@ -54,7 +54,16 @@ class PoloniexExchange(Exchange):
     def authenticate_with_credentials(self, credentials):
         return rest.PoloniexUser(self, credentials)
 
+    def refresh(_):
+        create_markets(refresh=True)
 
+def create_markets(refresh=False):
+    global _markets, currency_pair_code_to_market, exchange
+    if refresh:
+        currencies.refresh_currency_pairs()
+    _markets = MarketList(PoloniexMarket(exchange, *cp) for cp in currencies.CURRENCY_PAIRS)
+    stream.CURRENCY_PAIR_CODE_TO_MARKET = {m.curr_code:m for m in _markets}
+
+_markets = MarketList([])
 exchange = PoloniexExchange()
-_markets = MarketList(PoloniexMarket(exchange, *cp) for cp in CURRENCY_PAIRS)
-stream.CURRENCY_PAIR_CODE_TO_MARKET = {m.curr_code:m for m in exchange.markets}
+create_markets()
