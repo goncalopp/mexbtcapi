@@ -2,7 +2,7 @@
 import datetime
 import unittest
 import six
-from mexbtcapi.market import Credentials, Exchange, Market, MarketList, Orderbook, Order, Ticker, User, Wallet
+from mexbtcapi.market import Credentials, Exchange, Market, MarketList, Orderbook, Order, Ticker, User, Wallet, ActiveParticipant
 from mexbtcapi.currency import Currency
 
 
@@ -15,8 +15,11 @@ class SimpleExchange(Exchange):
     def markets(self):
         return MarketList(())
 
-    def authenticate(self, *args, **kwargs):
-        raise NotImplementedError
+    def create_credentials(self, *args, **kwargs):
+        return SimpleCredentials(*args, **kwargs)
+
+    def authenticate_with_credentials(self, credentials):
+        return SimpleUser(self, credentials)
 
 class SimpleMarket(Market):
     '''A simple market class'''
@@ -24,14 +27,16 @@ class SimpleMarket(Market):
         exchange = exchange or test_exchange
         Market.__init__(self, exchange, counter_currency, base_currency)
 
-    def authenticate(self, *args, **kwargs):
-        raise NotImplementedError
-
     def get_ticker(self):
         raise NotImplementedError
 
     def get_orderbook(self):
         raise NotImplementedError
+
+    def authenticate_with_credentials(self, credentials):
+        return SimpleActiveParticipant(self, credentials)
+
+
 
 class SimpleWallet(Wallet):
     def __init__(self, currency=None):
@@ -42,7 +47,8 @@ class SimpleWallet(Wallet):
         return 1 * self.currency
 
 class SimpleCredentials(Credentials):
-    pass
+    def __init__(self, *args, **kwargs):
+        self.args, self.kwargs = args, kwargs
 
 class SimpleUser(User):
     '''A simple User class for testing'''
@@ -54,28 +60,39 @@ class SimpleUser(User):
     def get_wallets(self):
         return {c1: SimpleWallet(c1)}
 
+class SimpleActiveParticipant(ActiveParticipant):
+    def cancel_order(self, order):
+        raise NotImplementedError
+
+    def get_open_orders(self):
+        raise NotImplementedError
+
+    def place_order(self, order):
+        raise NotImplementedError
+
+
 #GLOBALS
 test_exchange = SimpleExchange()
 test_credentials = SimpleCredentials()
 c1, c2 = Currency("c1"), Currency("c2")
-m = SimpleMarket(c1, c2)
+test_market = SimpleMarket(c1, c2)
 
 def craft_orderbook(bids_list, asks_list):
     '''create orderbook from two lists of tuples (amount, rate)'''
-    bids_list = [Order(l[0] * c1, l[1] * c1/c2, market=m) for l in bids_list]
-    asks_list = [Order(l[0] * c2, l[1] * c1/c2, market=m) for l in asks_list]
-    return Orderbook(m, bids_list, asks_list)
+    bids_list = [Order(l[0] * c1, l[1] * c1/c2, market=test_market) for l in bids_list]
+    asks_list = [Order(l[0] * c2, l[1] * c1/c2, market=test_market) for l in asks_list]
+    return Orderbook(test_market, bids_list, asks_list)
 
-def craft_order(amount, rate, bid=True, market=m):
+def craft_order(amount, rate, bid=True, market=test_market):
     from_c = market.counter_currency if bid else market.base_currency
     return Order(amount * from_c, rate * c1 / c2, market=market)
 
-def craft_market_order(amount, bid=True, market=m):
+def craft_market_order(amount, bid=True, market=test_market):
     from_c = market.counter_currency if bid else market.base_currency
     return Order(amount * from_c, market=market)
 
 def craft_ticker(bid=1, ask=2):
-    ticker = Ticker(m, datetime.datetime.now(), bid=bid*c1/c2, ask=ask*c1/c2)
+    ticker = Ticker(test_market, datetime.datetime.now(), bid=bid*c1/c2, ask=ask*c1/c2)
     return ticker
 
 def assert_items_equal(testcase, iterable_a, iterable_b):
@@ -125,6 +142,21 @@ class MarketTest(unittest.TestCase):
         self.assertNotEqual(m1, m3)
         self.assertNotEqual(m1, m4)
         self.assertNotEqual(m1, None)
+
+    def test_auth(self):
+        #test authenticate()
+        market = SimpleMarket(c1, c2)
+        participant = market.authenticate(1,2,a=3)
+        self.assertIsInstance(participant, ActiveParticipant)
+        self.assertEqual(participant.credentials.args, (1,2))
+        self.assertEqual(participant.credentials.kwargs, {'a': 3})
+        #test authenticate_with_credentials()
+        creds = test_exchange.create_credentials(1,2, a=3)
+        participant = market.authenticate_with_credentials(creds)
+        self.assertIsInstance(participant, ActiveParticipant)
+        self.assertEqual(participant.credentials.args, (1,2))
+        self.assertEqual(participant.credentials.kwargs, {'a': 3})
+
 
 class MarketListTest(unittest.TestCase):
     def test_create(self):
@@ -218,11 +250,11 @@ class MarketListTest(unittest.TestCase):
         assert_items_equal(self, ml.find(c3, exchange="E1"), ())
 
     def test_repr(self):
-        ml = MarketList([m])
+        ml = MarketList([test_market])
         self.assertIsInstance(repr(ml), six.string_types)
 
     def test_str(self):
-        ml = MarketList([m])
+        ml = MarketList([test_market])
         self.assertIsInstance(str(ml), six.string_types)
 
 class OrderbookTest(unittest.TestCase):
@@ -245,6 +277,20 @@ class ExchangeTest(unittest.TestCase):
         self.assertNotEqual(e1, e3)
         self.assertNotEqual(e1, None)
 
+    def test_auth(self):
+        #test authenticate()
+        exchange = SimpleExchange()
+        user = exchange.authenticate(1,2,a=3)
+        self.assertIsInstance(user, User)
+        self.assertEqual(user.credentials.args, (1,2))
+        self.assertEqual(user.credentials.kwargs, {'a': 3})
+        #test authenticate_with_credentials()
+        creds = test_exchange.create_credentials(1,2, a=3)
+        user = exchange.authenticate_with_credentials(creds)
+        self.assertIsInstance(user, User)
+        self.assertEqual(user.credentials.args, (1,2))
+        self.assertEqual(user.credentials.kwargs, {'a': 3})
+
 class TickerTest(unittest.TestCase):
     def test_create(self):
         ticker = craft_ticker()
@@ -265,6 +311,13 @@ class UserTest(unittest.TestCase):
         wallets = user.get_wallets()
         wallet = wallets[c1]
         self.assertIsInstance(wallet, Wallet)
+
+    def test_auth(self):
+        #test for_market()
+        user = SimpleUser()
+        participant = user.for_market(test_market)
+        self.assertIsInstance(participant, SimpleActiveParticipant)
+        self.assertEqual(user.credentials, participant.credentials)
 
 class WalletTest(unittest.TestCase):
     def test_create(self):

@@ -50,5 +50,8 @@ class BitstampMarket(Market):
     def get_orderbook(self):
         raise NotImplementedError
 
-    def authenticate(self):
+    def create_credentials(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def authenticate_with_credentials(self, credentials):
         raise NotImplementedError

@@ -32,9 +32,12 @@ class PoloniexMarket(Market):
     def get_orderbook(self):
         return rest.get_orderbook(self)
 
-    def authenticate(self, api_key, api_secret):
+    def create_credentials(self, api_key, api_secret):
         creds = PoloniexCredentials(api_key, api_secret)
-        return rest.PoloniexActiveParticipant(self, creds)
+        return creds
+
+    def authenticate_with_credentials(self, credentials):
+        return rest.PoloniexActiveParticipant(self, credentials)
 
 class PoloniexExchange(Exchange):
     def __init__(self):
@@ -44,9 +47,13 @@ class PoloniexExchange(Exchange):
     def markets(self):
         return _markets
 
-    def authenticate(self, api_key, api_secret):
+    def create_credentials(self, api_key, api_secret):
         creds = PoloniexCredentials(api_key, api_secret)
-        return rest.PoloniexUser(self, creds)
+        return creds
+
+    def authenticate_with_credentials(self, credentials):
+        return rest.PoloniexUser(self, credentials)
+
 
 exchange = PoloniexExchange()
 _markets = MarketList(PoloniexMarket(exchange, *cp) for cp in CURRENCY_PAIRS)

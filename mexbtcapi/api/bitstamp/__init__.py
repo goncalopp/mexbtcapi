@@ -9,7 +9,10 @@ class BitstampExchange(Exchange):
     def markets(self):
         return _markets
 
-    def authenticate(*args, **kwargs):
+    def create_credentials(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def authenticate_with_credentials(self, credentials):
         raise NotImplementedError
 
 exchange = BitstampExchange()

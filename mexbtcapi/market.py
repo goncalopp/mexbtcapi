@@ -170,9 +170,14 @@ class Market(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def authenticate(self, *args, **kwargs):
+    def authenticate_with_credentials(self, credentials):
         """returns a ActiveParticipant in this market"""
         raise NotImplementedError
+
+    def authenticate(self, *args, **kwargs):
+        """returns a ActiveParticipant in this market"""
+        credentials = self.exchange.create_credentials(*args, **kwargs)
+        return self.authenticate_with_credentials(credentials)
 
     def check_order_valid(self, order):
         '''checks if an order is adequate in this market'''
@@ -213,9 +218,20 @@ class Exchange(object):
         raise NotImplementedError
 
     @abstractmethod
-    def authenticate(self, *args, **kwargs):
-        '''returns a authenticated User for this exchange'''
+    def authenticate_with_credentials(self, credentials):
+        '''Returns a authenticated User for this exchange'''
         raise NotImplementedError
+
+    @abstractmethod
+    def create_credentials(self, *args, **kwargs):
+        '''Creates and returns a Credentials object.
+        The arguments are the same as authenticate()'''
+        raise NotImplementedError
+
+    def authenticate(self, *args, **kwargs):
+        '''Returns a authenticated User for this exchange.'''
+        credentials = self.create_credentials(*args, **kwargs)
+        return self.authenticate_with_credentials(credentials)
 
     def __str__(self):
         return self.name
@@ -265,15 +281,21 @@ class User(object):
         '''Returns a dictionary of Currency:Wallet'''
         raise NotImplementedError
 
+    def for_market(self, market):
+        '''Returns a ActiveParticipant in the market, using the same
+        credentials as this user'''
+        if market.exchange != self.exchange:
+            raise Exception("The market belongs to a different exchange")
+        return market.authenticate_with_credentials(self.credentials)
+
 
 class MarketList(tuple):
     '''A immutable, searchable list of markets'''
-    def __new__(cls, *args):
-        return tuple.__new__(cls, *args)
+    def __new__(cls, market_list, *args, **kwargs):
+        return tuple.__new__(cls, market_list)
 
-    def __init__(self, *_):
-        tuple.__init__(self)
-        assert all(isinstance(m, Market) for m in self)
+    def __init__(self, market_list, *args, **kwargs):
+        assert all(isinstance(m, Market) for m in market_list)
         self._all = set(self)
         self._by_currency = group_by(self, lambda market: (market.base_currency, market.counter_currency), multi=True)
         self._by_exchange = group_by(self, lambda market: market.exchange.name.lower())
