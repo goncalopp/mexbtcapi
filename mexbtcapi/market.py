@@ -291,10 +291,11 @@ class User(object):
 
 class MarketList(tuple):
     '''A immutable, searchable list of markets'''
-    def __new__(cls, market_list, *args, **kwargs):
+    def __new__(cls, market_list, *args, **kwargs): # pylint: disable=unused-argument
         return tuple.__new__(cls, market_list)
 
-    def __init__(self, market_list, *args, **kwargs):
+    def __init__(self, market_list, *args, **kwargs): # pylint: disable=unused-argument
+        tuple.__init__(self) # takes no arguments
         assert all(isinstance(m, Market) for m in market_list)
         self._all = set(self)
         self._by_currency = group_by(self, lambda market: (market.base_currency, market.counter_currency), multi=True)
