@@ -68,15 +68,3 @@ def get_ticker_stream_for_market(currency_pair_code):
     pub = pubsub.ChildPublisher(ticker_stream, topic=currency_pair_code)
     return pub
 
-def subscriber_callback(data):
-    pass
-    print "called!", data
-
-def main():
-    subscription = ticker_stream.subscribe(subscriber_callback, 'c1')
-    print("cycle1")
-    sleep(0.1)
-    print("cycle2")
-    sleep(0.1)
-    print("cycle3")
-    subscription.stop()

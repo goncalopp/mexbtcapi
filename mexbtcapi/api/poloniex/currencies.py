@@ -1,5 +1,5 @@
 from . import rest
-from rest import get_all_currency_pairs
+from .rest import get_all_currency_pairs
 from mexbtcapi.currency import CurrencyPair
 
 #refreshed 2016-10-31
@@ -12,9 +12,11 @@ def refresh_currency_pairs():
     global CURRENCY_PAIRS
     CURRENCY_PAIRS = get_all_currency_pairs()
 
-def print_currency_pairs():
-    print "[",
+def currency_pairs_repr():
+    lines = []
+    lines.append("[")
     for pair in CURRENCY_PAIRS:
-        print """('{}', '{}'), """.format(*pair),
-    print "]"
+        lines.append("""('{}', '{}'), """.format(*pair),)
+    lines.append("]")
+    return "\n".join(lines)
  

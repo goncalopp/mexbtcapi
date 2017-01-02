@@ -27,7 +27,7 @@ class CurrencyTest(unittest.TestCase):
         c1 = Currency("c1")
         self.assertEqual(1 * c1, Amount(1, c1))
         self.assertRaises(TypeError, lambda: c1 * 1) 
-        self.assertRaises(ValueError, lambda: "" * c1) 
+        self.assertRaises(TypeError, lambda: "" * c1)
 
     def test_div(self):
         c1, c2 = Currency("c1"), Currency("c2")
@@ -139,7 +139,7 @@ class AmountTest(unittest.TestCase):
         self.assertEqual(amount, 2 * c1)
         self.assertEqual(amount + 1, 3 * c1)
         # Fails when adding a Amount with other currency
-        self.assertRaises(Exception, lambda: amount + 1 * c2)
+        self.assertRaises(ValueError, lambda: amount + 1 * c2)
 
     def test_mul(self):
         c1, c2, amount = self.create_amount()

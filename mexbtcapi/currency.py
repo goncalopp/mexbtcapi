@@ -1,14 +1,18 @@
 '''Classes for Currency, ExchangeRate, Amount'''
+import copy
 from decimal import Decimal
 from fractions import Fraction
+from functools import total_ordering
 import logging
-import types
+import six
 
 logger = logging.getLogger(__name__)
 
+NUMBER_TYPES = six.integer_types + (float, Decimal, Fraction)
+
 
 def convert_to_decimal(number, frac=False):
-    bad_type = not isinstance(number, (int, long, str, unicode, Decimal, Fraction))
+    bad_type = not isinstance(number, NUMBER_TYPES + six.string_types)
     if bad_type:
         message = "{}, of type {} is not suitable as a Decimal"
         logger.warning(message.format(number, type(number)))
@@ -20,7 +24,7 @@ class Currency(object):
     def __init__(self, name):
         if isinstance(name, Currency):
             name = name.name
-        elif isinstance(name, types.StringTypes):
+        elif isinstance(name, six.string_types):
             name = name
         else:
             raise Exception("Can't create a Currency from {}".format(name))
@@ -38,7 +42,7 @@ class Currency(object):
         return self.name == other.name
 
     def __ne__(self, other):
-        return not self == other
+        return not self.__eq__(other)
 
     def __hash__(self):
         return hash(self.name)
@@ -47,12 +51,15 @@ class Currency(object):
         try:
             return Amount(other, self)
         except ValueError:
-            raise ValueError("Can't multiply currency with {0}".format(other))
+            return NotImplemented
 
     def __div__(self, other):
         if isinstance(other, Currency):
             return ExchangeRate(other, self, 1)
-        raise TypeError("Can't divide a Currency by a "+str(type(other)))
+        return NotImplemented
+
+    def __truediv__(self, other):
+        return self.__div__(other)
 
 class CurrencyPair(object):
     '''A pair of currencies'''
@@ -114,9 +121,9 @@ class CurrencyPair(object):
         return hash(self.currencies)
 
     def __ne__(self, other):
-        return not self == other
+        return not self.__eq__(other)
 
-
+@total_ordering
 class ExchangeRate(object):
     """The proportion between two currencies' values"""
     def __init__(self, numerator_currency, denominator_currency, rate):
@@ -125,8 +132,11 @@ class ExchangeRate(object):
         assert isinstance(numerator_currency, Currency)
         assert isinstance(denominator_currency, Currency)
         assert numerator_currency != denominator_currency
+        dec_rate = convert_to_decimal(rate, frac=True)
+        if not 0 < dec_rate < float('inf'):
+            raise ValueError("Rate must be strictly positive")
         self._currencies = CurrencyPair(numerator_currency, denominator_currency)
-        self._rate = convert_to_decimal(rate, frac=True)
+        self._rate = dec_rate
 
     @staticmethod
     def from_amounts(amount1, amount2):
@@ -200,15 +210,26 @@ class ExchangeRate(object):
         '''gives the ExchangeRate with currency as the numerator.'''
         return self if not self._is_denominator(currency) else self.reverse()
 
-    def __cmp__(self, other):
-        err = ValueError("can't compare the two values: {}, {}".format(self, other))
+    def _cmp_checks(self, other):
         if not isinstance(other, ExchangeRate):
-            raise err
-        if self.currencies == other.currencies.reverse():
+            raise TypeError("can't compare the two values: {}, {}".format(self, other))
+        if self.currencies != other.currencies:
             other = other.reverse()
         if self.currencies != other.currencies:
-            raise err
+            raise ValueError("Can't compare ExchangeRates with different currencies: {}, {}".format(self, other))
+        return other
+
+    def __cmp__(self, other):
+        other = self._cmp_checks(other)
         return cmp(self.rate, other.rate)
+
+    def __lt__(self, other):
+        other = self._cmp_checks(other)
+        return self.rate < other.rate
+
+    def __eq__(self, other):
+        other = self._cmp_checks(other)
+        return self.rate == other.rate
 
     def __hash__(self):
         return hash((self._currencies, self._rate))
@@ -219,20 +240,12 @@ class ExchangeRate(object):
     def __str__(self):
         return "{0:.5f} {1}/{2}".format(float(self.rate), self.numerator.name, self.denominator.name)
 
-    def clone(self):
-        # returns a copy of this ExchangeRate
-        return ExchangeRate(self._currencies[0], self._currencies[1], self._rate)
-
 class Amount(object):
     """An amount of  a given currency"""
 
     def __init__(self, value, currency):
         self.value = convert_to_decimal(value, frac=True)
         self.currency = currency
-
-    def clone(self):
-        # returns a copy of this amount
-        return Amount(self.value, self.currency)
 
     def __repr__(self):
         return "<Amount({0:.5f} {1})>".format(float(self.value), self.currency)
@@ -241,24 +254,21 @@ class Amount(object):
         return "{0:.5f} {1}".format(float(self.value), self.currency)
 
     def __iadd__(self, other):
-        if isinstance(other, (int, float, Decimal)):
+        if isinstance(other, NUMBER_TYPES):
             self.value += other
         elif isinstance(other, Amount):
             if self.currency != other.currency:
-                raise ValueError("Can't sum two amounts in " + \
-                                 "different currencies")
+                raise ValueError("Can't add two amounts with different currencies")
             self.value += other.value
         else:
-            raise ValueError("Can't sum Amount to ", type(other))
+            return NotImplemented
         return self
 
     def __add__(self, other):
-        am = self.clone()
-        am += other
-        return am
+        return copy.copy(self).__iadd__(other)
 
     def __neg__(self):
-        am = self.clone()
+        am = copy.copy(self)
         am.value = -am.value
         return am
 
@@ -267,20 +277,16 @@ class Amount(object):
         return self
 
     def __sub__(self, other):
-        am = self.clone() + (-other)
-        return am
+        return copy.copy(self).__iadd__(-other)
 
     def __imul__(self, other):
-        if isinstance(other, (int, float, long, Decimal)):
-            self.value *= other
-        else:
-            raise ValueError("Can't multiply Amount to ", type(other))
+        if not isinstance(other, NUMBER_TYPES):
+            return NotImplemented
+        self.value *= other
         return self
 
     def __mul__(self, other):
-        am = self.clone()
-        am *= other
-        return am
+        return copy.copy(self).__imul__(other)
 
     def __div__(self, other):
         '''doubles as ExchangeRate constructor'''
@@ -289,22 +295,36 @@ class Amount(object):
         if isinstance(other, Amount):
             return ExchangeRate.from_amounts(self, other)
         else:
-            am = self.clone()
-            am /= other
-            return am
+            return copy.copy(self).__idiv__(other)
 
     def __idiv__(self, other):
-        if isinstance(other, (int, float, long, Decimal)):
-            self.value /= other
-            return self
-        else:
-            raise ValueError("Can't divide Amount to ", type(other))
+        if not isinstance(other, NUMBER_TYPES):
+            return NotImplemented
+        self.value /= other
+        return self
+
+    def __truediv__(self, other):
+        return self.__div__(other)
+
+    def __itruediv__(self, other):
+        return self.__idiv__(other)
+
+    def _cmp_checks(self, other):
+        if not isinstance(other, Amount) or other.currency != self.currency:
+            raise ValueError("can't compare the two amounts", str(self), str(other))
+        return other
 
     def __cmp__(self, other):
-        if not isinstance(other, Amount) or other.currency != self.currency:
-            raise ValueError("can't compare the two amounts",
-                             str(self), str(other))
+        other = self._cmp_checks(other)
         return cmp(self.value, other.value)
+
+    def __lt__(self, other):
+        other = self._cmp_checks(other)
+        return self.value < other.value
+
+    def __eq__(self, other):
+        other = self._cmp_checks(other)
+        return self.value == other.value
 
     def __rshift__(self, other):
         '''constructor for Order'''
@@ -316,7 +336,7 @@ class Amount(object):
         if other is None or isinstance(other, ExchangeRate):
             from mexbtcapi.market import Order
             return Order(self, other)
-        raise ValueError("Can't shift {0} by {1}".format(self, other))
+        return NotImplemented
 
     def __hash__(self):
         return hash((self.value, self.currency))

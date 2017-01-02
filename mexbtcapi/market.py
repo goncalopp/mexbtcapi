@@ -2,15 +2,17 @@
 This module exposes several classes related to currency markets
 '''
 
-from datetime import datetime, timedelta
-from decimal import Decimal
 from abc import ABCMeta, abstractmethod, abstractproperty
 import copy
+from datetime import datetime, timedelta
+from decimal import Decimal
+from fractions import Fraction
 import six
 
 from mexbtcapi.currency import ExchangeRate, Amount, Currency, CurrencyPair
 from mexbtcapi.util import group_by
 
+NUMBER_TYPES = six.integer_types + (float, Decimal, Fraction)
 
 class Order(object):
     """Represents an order to sell a number of from_amount for exchange_rate.
@@ -266,8 +268,11 @@ class User(object):
 
 class MarketList(tuple):
     '''A immutable, searchable list of markets'''
-    def __init__(self, list_of_markets):
-        tuple.__init__(self, list_of_markets)
+    def __new__(cls, *args):
+        return tuple.__new__(cls, *args)
+
+    def __init__(self, *_):
+        tuple.__init__(self)
         assert all(isinstance(m, Market) for m in self)
         self._all = set(self)
         self._by_currency = group_by(self, lambda market: (market.base_currency, market.counter_currency), multi=True)
@@ -375,7 +380,7 @@ class Ticker(object):
         assert isinstance(market, Market)
         assert isinstance(time, datetime)
         assert all(isinstance(kwargs[k], ExchangeRate) for k in self.RATE_FIELDS)
-        assert all(isinstance(kwargs[k], (int, long, float, Decimal)) for k in self.NUMBER_FIELDS)
+        assert all(isinstance(kwargs[k], NUMBER_TYPES) for k in self.NUMBER_FIELDS)
         different_fields = set(self.RATE_FIELDS + self.NUMBER_FIELDS) ^ set(kwargs.keys())
         if different_fields:
             raise Exception("Missing/extra fields: {}".format(different_fields))

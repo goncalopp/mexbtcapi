@@ -1,3 +1,4 @@
+import codecs
 from decimal import Decimal
 import datetime
 
@@ -6,15 +7,21 @@ from mexbtcapi.currencies import BTC, USD, EUR
 from mexbtcapi.currency import Amount, ExchangeRate
 from mexbtcapi.market import Market, Ticker
 
-import urllib2
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen
 import json
 
 CURRENCIES = {USD:'usd', EUR:'eur'}
 BASE_URL = 'https://www.bitstamp.net/api/v2/{method}/btc{currency}/'
 
 def request(url):
-    r = urllib2.urlopen(url)
-    data = json.load(r)
+    r = urlopen(url)
+    decoded = codecs.getreader('utf-8')(r)
+    data = json.load(decoded)
     return data
 
 class BitstampTicker(Ticker):

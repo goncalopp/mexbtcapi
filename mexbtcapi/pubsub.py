@@ -67,6 +67,7 @@ class Publisher(object):
         return len(self._active_subscriptions)
 
     def _get_send_subscriptions(self, **kwargs):
+        '''Returns the subscriptions (to self) that we should send() to'''
         # pylint: disable=unused-argument
         return self._active_subscriptions
 

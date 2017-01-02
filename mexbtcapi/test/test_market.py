@@ -1,7 +1,7 @@
 '''Tests for market.py'''
 import datetime
-import types
 import unittest
+import six
 from mexbtcapi.market import Credentials, Exchange, Market, MarketList, Orderbook, Order, Ticker, User, Wallet
 from mexbtcapi.currency import Currency
 
@@ -15,7 +15,7 @@ class SimpleExchange(Exchange):
     def markets(self):
         return MarketList(())
 
-    def authenticate(*args, **kwargs):
+    def authenticate(self, *args, **kwargs):
         raise NotImplementedError
 
 class SimpleMarket(Market):
@@ -45,6 +45,7 @@ class SimpleCredentials(Credentials):
     pass
 
 class SimpleUser(User):
+    '''A simple User class for testing'''
     def __init__(self, exchange=None, credentials=None):
         exchange = exchange or test_exchange
         credentials = credentials or test_credentials
@@ -77,6 +78,11 @@ def craft_ticker(bid=1, ask=2):
     ticker = Ticker(m, datetime.datetime.now(), bid=bid*c1/c2, ask=ask*c1/c2)
     return ticker
 
+def assert_items_equal(testcase, iterable_a, iterable_b):
+    if hasattr(testcase, 'assertItemsEqual'):
+        testcase.assertItemsEqual(iterable_a, iterable_b)
+    else:
+        testcase.assertCountEqual(iterable_a, iterable_b)
 
 class OrderTest(unittest.TestCase):
     def test_reverse(self):
@@ -132,29 +138,29 @@ class MarketListTest(unittest.TestCase):
         m1, m2, m3 = (SimpleMarket(cx1, cx2) for cx1, cx2 in zip(market_currencies[:-1], market_currencies[1:]))
         # ---- empty
         ml = MarketList([])
-        self.assertItemsEqual(ml.find(c5), [])
+        assert_items_equal(self, ml.find(c5), [])
         # ---- single element
         ml = MarketList([m1])
-        self.assertItemsEqual(ml.find(c1), [m1])
-        self.assertItemsEqual(ml.find(c2), [m1])
-        self.assertItemsEqual(ml.find(c5), [])
-        self.assertItemsEqual(ml.find(c1, c2), [m1])
-        self.assertItemsEqual(ml.find(c2, c1), [m1])
-        self.assertItemsEqual(ml.find(c1, c5), [])
-        self.assertItemsEqual(ml.find(c5, c1), [])
+        assert_items_equal(self, ml.find(c1), [m1])
+        assert_items_equal(self, ml.find(c2), [m1])
+        assert_items_equal(self, ml.find(c5), [])
+        assert_items_equal(self, ml.find(c1, c2), [m1])
+        assert_items_equal(self, ml.find(c2, c1), [m1])
+        assert_items_equal(self, ml.find(c1, c5), [])
+        assert_items_equal(self, ml.find(c5, c1), [])
         # ---- many elements
         ml = MarketList([m1, m2, m3])
-        self.assertItemsEqual(ml.find(c1), [m1])
-        self.assertItemsEqual(ml.find(c2), [m1, m2])
-        self.assertItemsEqual(ml.find(c3), [m2, m3])
-        self.assertItemsEqual(ml.find(c5), [])
-        self.assertItemsEqual(ml.find(c5, c4), [])
-        self.assertItemsEqual(ml.find(c1, c2), [m1])
-        self.assertItemsEqual(ml.find(c2, c1), [m1])
-        self.assertItemsEqual(ml.find(c2, c3), [m2])
-        self.assertItemsEqual(ml.find(c3, c2), [m2])
-        self.assertItemsEqual(ml.find(c1, c3), [])
-        self.assertItemsEqual(ml.find(), [m1, m2, m3])
+        assert_items_equal(self, ml.find(c1), [m1])
+        assert_items_equal(self, ml.find(c2), [m1, m2])
+        assert_items_equal(self, ml.find(c3), [m2, m3])
+        assert_items_equal(self, ml.find(c5), [])
+        assert_items_equal(self, ml.find(c5, c4), [])
+        assert_items_equal(self, ml.find(c1, c2), [m1])
+        assert_items_equal(self, ml.find(c2, c1), [m1])
+        assert_items_equal(self, ml.find(c2, c3), [m2])
+        assert_items_equal(self, ml.find(c3, c2), [m2])
+        assert_items_equal(self, ml.find(c1, c3), [])
+        assert_items_equal(self, ml.find(), [m1, m2, m3])
 
     def test_find_double(self):
         c3, c4 = (Currency(c) for c in ('c3', 'c4'))
@@ -163,26 +169,26 @@ class MarketListTest(unittest.TestCase):
         m1, m2, m3 = (SimpleMarket(cx1, cx2) for cx1, cx2 in zip(market_currencies[:-1], market_currencies[1:]))
         # ---- empty
         ml = MarketList([])
-        self.assertItemsEqual(ml.find(c1).find(c1), [])
-        self.assertItemsEqual(ml.find(c1).find(c2), [])
+        assert_items_equal(self, ml.find(c1).find(c1), [])
+        assert_items_equal(self, ml.find(c1).find(c2), [])
         # ---- one element
         ml = MarketList([m1])
-        self.assertItemsEqual(ml.find(c1).find(c1), [m1])
-        self.assertItemsEqual(ml.find(c1).find(c2), [m1])
-        self.assertItemsEqual(ml.find(c2).find(c1), [m1])
-        self.assertItemsEqual(ml.find(c1, c2).find(c2, c1), [m1])
-        self.assertItemsEqual(ml.find(c1).find(c3), [])
-        self.assertItemsEqual(ml.find(c3).find(c1), [])
+        assert_items_equal(self, ml.find(c1).find(c1), [m1])
+        assert_items_equal(self, ml.find(c1).find(c2), [m1])
+        assert_items_equal(self, ml.find(c2).find(c1), [m1])
+        assert_items_equal(self, ml.find(c1, c2).find(c2, c1), [m1])
+        assert_items_equal(self, ml.find(c1).find(c3), [])
+        assert_items_equal(self, ml.find(c3).find(c1), [])
         # ---- many elements
         ml = MarketList([m1, m2, m3])
-        self.assertItemsEqual(ml.find(c1).find(c1), [m1])
-        self.assertItemsEqual(ml.find(c1).find(c2), [m1])
-        self.assertItemsEqual(ml.find(c2).find(c2), [m1, m2])
-        self.assertItemsEqual(ml.find(c2).find(c1), [m1])
-        self.assertItemsEqual(ml.find(c2).find(c2), [m1, m2])
-        self.assertItemsEqual(ml.find(c2).find(c3), [m2])
-        self.assertItemsEqual(ml.find(c3).find(c3), [m2, m3])
-        self.assertItemsEqual(ml.find(c3).find(c2), [m2])
+        assert_items_equal(self, ml.find(c1).find(c1), [m1])
+        assert_items_equal(self, ml.find(c1).find(c2), [m1])
+        assert_items_equal(self, ml.find(c2).find(c2), [m1, m2])
+        assert_items_equal(self, ml.find(c2).find(c1), [m1])
+        assert_items_equal(self, ml.find(c2).find(c2), [m1, m2])
+        assert_items_equal(self, ml.find(c2).find(c3), [m2])
+        assert_items_equal(self, ml.find(c3).find(c3), [m2, m3])
+        assert_items_equal(self, ml.find(c3).find(c2), [m2])
 
     def test_find_one(self):
         c3, c4 = map(Currency, ('c3', 'c4'))
@@ -198,26 +204,26 @@ class MarketListTest(unittest.TestCase):
     def test_find_by_exchange(self):
         e1, e2 = SimpleExchange("E1"), SimpleExchange("e2")
         c3 = Currency('c3')
-        m1, m2= SimpleMarket(c1, c2, e1), SimpleMarket(c1, c2, e2)
+        m1, m2 = SimpleMarket(c1, c2, e1), SimpleMarket(c1, c2, e2)
         ml = MarketList([m1, m2])
         #simple find
-        self.assertItemsEqual(ml.find(exchange="E1"), (m1,))
+        assert_items_equal(self, ml.find(exchange="E1"), (m1,))
         #simple 2
-        self.assertItemsEqual(ml.find(exchange="E2"), (m2,))
+        assert_items_equal(self, ml.find(exchange="E2"), (m2,))
         #lower case
-        self.assertItemsEqual(ml.find(exchange="e1"), (m1,))
+        assert_items_equal(self, ml.find(exchange="e1"), (m1,))
         #with currency, 1 result
-        self.assertItemsEqual(ml.find(c1, exchange="E1"), (m1,))
+        assert_items_equal(self, ml.find(c1, exchange="E1"), (m1,))
         #with currency, 0 results
-        self.assertItemsEqual(ml.find(c3, exchange="E1"), ())
+        assert_items_equal(self, ml.find(c3, exchange="E1"), ())
 
     def test_repr(self):
         ml = MarketList([m])
-        self.assertIsInstance(repr(ml), types.StringType)
+        self.assertIsInstance(repr(ml), six.string_types)
 
     def test_str(self):
         ml = MarketList([m])
-        self.assertIsInstance(str(ml), types.StringType)
+        self.assertIsInstance(str(ml), six.string_types)
 
 class OrderbookTest(unittest.TestCase):
     def test_create(self):
