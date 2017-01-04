@@ -1,10 +1,6 @@
 from . import currencies, rest, stream
-from mexbtcapi.market import Credentials, Exchange, MarketList, Market, Wallet
+from mexbtcapi.market import Exchange, MarketList, Market, Wallet
 from mexbtcapi.currency import ExchangeRate
-
-class PoloniexCredentials(Credentials):
-    def __init__(self, api_key, api_secret):
-        self.api_key, self.api_secret = api_key, api_secret
 
 class PoloniexWallet(Wallet):
     def get_balance(self):
@@ -32,8 +28,9 @@ class PoloniexMarket(Market):
         return rest.get_orderbook(self)
 
     def create_credentials(self, api_key, api_secret):
-        creds = PoloniexCredentials(api_key, api_secret)
-        return creds
+        raise NotImplementedError("Please use User.for_market instead")
+        # Unfortunately we can't simply create new PoloniexCredentials here.
+        # See PoloniexCredentials.client
 
     def authenticate_with_credentials(self, credentials):
         return rest.PoloniexActiveParticipant(self, credentials)
@@ -48,7 +45,7 @@ class PoloniexExchange(Exchange):
         return _markets
 
     def create_credentials(self, api_key, api_secret):
-        creds = PoloniexCredentials(api_key, api_secret)
+        creds = rest.PoloniexCredentials(api_key, api_secret)
         return creds
 
     def authenticate_with_credentials(self, credentials):

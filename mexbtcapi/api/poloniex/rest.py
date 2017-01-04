@@ -14,7 +14,7 @@ import poloniex
 import mexbtcapi
 from .common import PoloniexTicker, rename_dict_keys
 from mexbtcapi.currency import Amount, Currency, CurrencyPair
-from mexbtcapi.market import ActiveParticipant, Order, Orderbook, User, Wallet
+from mexbtcapi.market import ActiveParticipant, Credentials, Order, Orderbook, User, Wallet
 
 TICKER_CACHE_TIMEOUT = datetime.timedelta(seconds=1)
 POLONIEX_FIELD_MAP = {'high24hr':'high', 'highestBid':'bid', 'low24hr':'low', 'lowestAsk':'ask'}
@@ -32,14 +32,18 @@ def get_all_currency_pairs():
     pairs = [CurrencyPair(t[0], t[1]) for t in tuples]
     return pairs
 
+class PoloniexRestException(Exception):
+    pass
+
 class CachedRest(object):
     @cached_property_with_ttl(ttl=1.0)
     def global_ticker(self):
         '''Poloniex only method for getting a ticker returns it for all currencies.'''
         logging.info("Calling returnTicker")
-        return client.returnTicker()
-
-
+        data =  client.returnTicker()
+        if 'error' in data:
+            raise PoloniexRestException(response['error'])
+        return data
 
 def get_ticker(market):
     ticker = cached_rest.global_ticker
@@ -57,9 +61,16 @@ def get_orderbook(market):
         order = Order(from_amount=from_amount, exchange_rate=er, market=market)
         return order
     data = client.returnOrderBook(market.curr_code)
+    if 'error' in data:
+        raise PoloniexRestException(data['error'])
     bids = [row_to_order(x, True)  for x in data['bids']]
     asks = [row_to_order(x, False) for x in data['asks']]
     return Orderbook(market, bids, asks)
+
+class PoloniexCredentials(Credentials):
+    def __init__(self, api_key, api_secret):
+        self.api_key, self.api_secret = api_key, api_secret
+        self.client = poloniex.Poloniex(api_key, api_secret) # Rest client instance. This is here because the client for a given user needs to be a singleton, due to nonce requirements from Poloniex API design
 
 class PoloniexWallet(Wallet):
     def __init__(self, currency, user):
@@ -73,12 +84,15 @@ class PoloniexWallet(Wallet):
 class PoloniexUser(User):
     def __init__(self, *args, **kwargs):
         User.__init__(self, *args, **kwargs)
-        self.client = poloniex.Poloniex(self.credentials.api_key, self.credentials.api_secret)
+        self.client = self.credentials.client
 
     @cached_property_with_ttl(ttl=1.0)
     def all_balances(self):
-        logging.info("Calling returnBalances")
+        log.info("Calling returnBalances")
         data = self.client.returnBalances()
+        if 'error' in data:
+            raise PoloniexRestException(data['error'])
+        log.debug("returnBalances returned %s", data)
         amounts = [Amount(v, Currency(k)) for k, v in data.items()]
         keyed_amounts = {a.currency : a for a in amounts}
         return keyed_amounts
@@ -90,19 +104,21 @@ class PoloniexUser(User):
 class PoloniexActiveParticipant(ActiveParticipant):
     def __init__(self, *args, **kwargs):
         ActiveParticipant.__init__(self, *args, **kwargs)
-        self.client = poloniex.Poloniex(self.credentials.api_key, self.credentials.api_secret)
+        self.client = self.credentials.client
 
     def place_order(self, order):
         if order.rate is None:
-            raise Exception("Poloniex doesn't support market orders, only limit orders")
+            raise PoloniexRestException("Poloniex doesn't support market orders, only limit orders")
         order = order.with_market(self.market)
         method = self.client.buy if order.is_bid else self.client.sell
         pair = order.market.curr_code
         rate = order.rate.per(order.market.base_currency)
-        amount = rate.convert(order.from_amount, order.market.base_currency).value
-        response = method(pair, float(rate.rate), float(amount)) 
+        amount = rate.convert(order.from_amount, order.market.base_currency)
+        rate, amount = float(rate.rate), float(amount.value)
+        log.info("Placing order: %s %s amount=%s rate=%s", 'buy' if order.is_bid else 'sell', pair, amount, rate)
+        response = method(pair, rate, amount) 
         if 'error' in response:
-            raise Exception(response['error'])
+            raise PoloniexRestException(response['error'])
         return response
 
     def cancel_order(self, order):
