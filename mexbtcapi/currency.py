@@ -255,7 +255,7 @@ class Amount(object):
 
     def __iadd__(self, other):
         if isinstance(other, NUMBER_TYPES):
-            self.value += other
+            self.value += convert_to_decimal(other, frac=True)
         elif isinstance(other, Amount):
             if self.currency != other.currency:
                 raise ValueError("Can't add two amounts with different currencies")
@@ -282,7 +282,7 @@ class Amount(object):
     def __imul__(self, other):
         if not isinstance(other, NUMBER_TYPES):
             return NotImplemented
-        self.value *= other
+        self.value *= convert_to_decimal(other, frac=True)
         return self
 
     def __mul__(self, other):
@@ -300,7 +300,7 @@ class Amount(object):
     def __idiv__(self, other):
         if not isinstance(other, NUMBER_TYPES):
             return NotImplemented
-        self.value /= other
+        self.value /= convert_to_decimal(other, frac=True)
         return self
 
     def __truediv__(self, other):

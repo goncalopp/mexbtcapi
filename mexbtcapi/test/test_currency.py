@@ -1,6 +1,7 @@
 '''Tests for currency.py'''
 import unittest
 from decimal import Decimal
+from fractions import Fraction
 from mexbtcapi.currency import Currency, ExchangeRate, Amount, CurrencyPair
 
 class CurrencyTest(unittest.TestCase):
@@ -141,6 +142,29 @@ class AmountTest(unittest.TestCase):
         # Fails when adding a Amount with other currency
         self.assertRaises(ValueError, lambda: amount + 1 * c2)
 
+    def test_add_float(self):
+        '''Check that adding a float preserves internal Decimal handling'''
+        _, _, amount = self.create_amount()
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
+        amount += 0.12
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
+
+    def test_sub(self):
+        c1, c2, amount = self.create_amount()
+        self.assertEqual(amount - amount, 0 * c1)
+        amount -= amount
+        self.assertEqual(amount, 0 * c1)
+        self.assertEqual(amount - 1, -1 * c1)
+        # Fails when adding a Amount with other currency
+        self.assertRaises(ValueError, lambda: amount - 1 * c2)
+
+    def test_sub_float(self):
+        '''Check that adding a float preserves internal Decimal handling'''
+        _, _, amount = self.create_amount()
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
+        amount += 0.12
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
+ 
     def test_mul(self):
         c1, c2, amount = self.create_amount()
         self.assertEqual(amount * 2, 2 * c1)
@@ -149,12 +173,26 @@ class AmountTest(unittest.TestCase):
         # Fails when multiplying with an amount
         self.assertRaises(Exception, lambda: amount * amount)
 
+    def test_mul_float(self):
+        '''Check that multiplying by float preserves internal Decimal handling'''
+        _, _, amount = self.create_amount()
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
+        amount *= 0.12
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
+
     def test_div(self):
         c1, c2, amount = self.create_amount()
         self.assertEqual(amount / 2, '0.5' * c1)
         amount/= 2
         self.assertEqual(amount, '0.5' * c1)
         self.assertIsInstance(amount / (2 * c2), ExchangeRate)
+
+    def test_div_float(self):
+        '''Check that dividing by a float preserves internal Decimal handling'''
+        _, _, amount = self.create_amount()
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
+        amount /= 0.12
+        self.assertIsInstance(amount.value, (Fraction, Decimal))
 
 class ExchangeRateTest(unittest.TestCase):
     @staticmethod
