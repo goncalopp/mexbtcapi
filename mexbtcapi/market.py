@@ -76,6 +76,13 @@ class Order(object):
         self_copy._sanity_check()
         return self_copy
 
+    def with_rate(self, rate):
+        assert isinstance(rate, ExchangeRate)
+        self_copy = copy.copy(self)
+        self_copy.exchange_rate = rate
+        self_copy._sanity_check()
+        return self_copy
+
     def reverse(self):
         '''Returns a new Order with same rate but swapped to and from amounts'''
         if self.exchange_rate is None:
@@ -382,7 +389,6 @@ class ActiveParticipant(Participant):
     def get_open_orders(self):
         """Gets all the open orders for this participant"""
         pass
-
 
 class Ticker(object):
     """Ticker datapoint
