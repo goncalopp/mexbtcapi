@@ -77,6 +77,8 @@ class Order(object):
         return self_copy
 
     def with_rate(self, rate):
+        '''Returns a new Order, with rate set to the specified one'''
+        # pylint: disable=protected-access
         assert isinstance(rate, ExchangeRate)
         self_copy = copy.copy(self)
         self_copy.exchange_rate = rate
@@ -222,6 +224,12 @@ class Exchange(object):
     @abstractproperty
     def markets(self):
         '''Returns a MarketList of all the markets in the exchange'''
+        raise NotImplementedError
+
+    def refresh(self):
+        '''Refreshes (i.e.: gets up to date) data about this exchange
+        from the internet, including list of markets.
+        This method returns None, information is updated in-place'''
         raise NotImplementedError
 
     @abstractmethod
@@ -446,4 +454,3 @@ class Orderbook(object):
         self.market = market
         self.bids = tuple(bid_orders)
         self.asks = tuple(ask_orders)
-

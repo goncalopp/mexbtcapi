@@ -16,6 +16,11 @@ def _generate_markets(exchange_list):
             log.debug("Loaded market {}".format(mkt))
             yield mkt
 
+def _refresh_markets():
+    # pylint: disable=global-statement
+    global markets
+    markets = market.MarketList(_generate_markets(exchanges.values()))
+
 def _load_exchanges_from_modules(modules):
     exchange_d = {}
     for module in modules:
@@ -30,4 +35,15 @@ def _load_exchanges_from_modules(modules):
     return exchange_d
 
 exchanges = _load_exchanges_from_modules(api.apis)
-markets = market.MarketList(_generate_markets(exchanges.values()))
+markets = None
+_refresh_markets()
+
+def refresh():
+    '''Refreshes all the exchanges and updates the global list of markets'''
+    for ex in exchanges.values():
+        try:
+            ex.refresh()
+        except NotImplementedError:
+            log.debug("refresh() is not implemented for %s, ignoring", ex)
+    log.debug("Refreshing global market list")
+    _refresh_markets()
